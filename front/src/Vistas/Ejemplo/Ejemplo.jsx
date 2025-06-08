@@ -1,30 +1,36 @@
 import React from 'react'
+import Navbar from '../../Componentes/Navbar'
+
+//Variables glovales
+import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
+
+//Uso de toastys
+import { useToast } from '../../Componentes/ToastContext'
+
+//Router
+import { useNavigate } from "react-router-dom";
+
+//Modo claro/oscuro
+import TemaChanger from '../../Componentes/TemaChanger'
+
+
+
 
 const Ejemplo = () => {
+
+
     return (
         <div>
-            <div className='flex font-serif h-23 bg-amber-600 text-6xl '>
-                Intento de aprendisaje CSS
+            <Navbar />
+
+            <div>
+                Swicht de tema
             </div>
 
-            <div className=' flex items-center justify-center'>
-                HOLA
+            <div className=''>
+                Ejemplos de componentes
             </div>
 
-
-            <div className='w-20 h-20 bg-amber-800'>
-                XD
-            </div>
-
-
-            <div className='w-20 h-20 bg-amber-800'>
-                XD
-            </div>
-
-
-            <div className='w-20 h-20 bg-amber-800'>
-                XD
-            </div>
 
         </div>
     )

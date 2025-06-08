@@ -9,21 +9,31 @@ JWT_SECRET = process.env.JWT_SECRET
 
 
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
-    const rol = 'usuario'
+  const { nombre, email, password, confirmPass } = req.body;
+  const rol = 'usuario'
 
-    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-    
-    const checkUser = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    if (checkUser.rows.length > 0) return res.status(400).json({ error: 'El email ya está registrado' });
+  if (!nombre || !email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  if (password != confirmPass) {
+    return res.status(400).json({ error: 'Las contraseñas no coinciden' });
+  }
 
-    await pool.query(
-        'INSERT INTO usuarios (email, password, rol) VALUES ($1, $2, $3)',
-        [email, hashedPassword, rol]
-    );
-    res.status(201).json({ message: 'Usuario creado correctamente' });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'El email no es válido' });
+  }
+
+  const checkUser = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+  if (checkUser.rows.length > 0) return res.status(400).json({ error: 'El email ya está registrado' });
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await pool.query(
+    'INSERT INTO usuarios (nombre, email, password, rol) VALUES ($4, $1, $2, $3)',
+    [email, hashedPassword, rol, nombre]
+  );
+  res.status(201).json({ message: 'Usuario creado correctamente' });
 });
 
 
