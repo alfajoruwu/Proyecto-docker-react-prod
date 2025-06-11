@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: Custom-orange --default, Custom-orange --prefersdark;
+  themes: lig --default, Custom-orange --prefersdark;
   root: ":root";
   include: ;
   exclude: ;
@@ -21,20 +21,20 @@
   --color-base-content: oklch(97% 0.001 106.424);
   --color-primary: oklch(70% 0.213 47.604);
   --color-primary-content: oklch(98% 0.003 247.858);
-  --color-secondary: oklch(71% 0.194 13.428);
-  --color-secondary-content: oklch(27% 0.105 12.094);
-  --color-accent: oklch(77% 0.152 181.912);
-  --color-accent-content: oklch(27% 0.046 192.524);
-  --color-neutral: oklch(55% 0.195 38.402);
-  --color-neutral-content: oklch(98% 0.001 106.423);
-  --color-info: oklch(68% 0.169 237.323);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(72% 0.219 149.579);
-  --color-success-content: oklch(97% 0.021 166.113);
-  --color-warning: oklch(79% 0.184 86.047);
-  --color-warning-content: oklch(98% 0.026 102.212);
-  --color-error: oklch(57% 0.245 27.325);
-  --color-error-content: oklch(96% 0.015 12.422);
+  --color-secondary: oklch(76% 0.188 70.08);
+  --color-secondary-content: oklch(94% 0.028 342.258);
+  --color-accent: oklch(85% 0.199 91.936);
+  --color-accent-content: oklch(28% 0.066 53.813);
+  --color-neutral: oklch(70% 0.213 47.604);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(74% 0.16 232.661);
+  --color-info-content: oklch(29% 0.066 243.157);
+  --color-success: oklch(76% 0.177 163.223);
+  --color-success-content: oklch(37% 0.077 168.94);
+  --color-warning: oklch(25% 0.092 26.042);
+  --color-warning-content: oklch(98% 0.003 247.858);
+  --color-error: oklch(50% 0.213 27.518);
+  --color-error-content: oklch(96% 0.007 247.896);
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
   --radius-box: 0.5rem;
@@ -47,9 +47,10 @@
 
 
 
+
 @plugin "daisyui/theme" {
-  name: "Custom-orange";
-  default: true;
+  name: "lig";
+  default: false;
   prefersdark: false;
   color-scheme: "light";
   --color-base-100: oklch(100% 0 0);
@@ -81,6 +82,7 @@
   --depth: 0;
   --noise: 0;
 }
+
 
 
 

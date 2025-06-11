@@ -37,7 +37,12 @@ const Login = () => {
     const EnvioLogin = (Usuario, Contrasena) => {
         apiClient.post('/usuarios/login', { email: Usuario, password: Contrasena })
 
-            .then(response => { console.log('Usuarios:', response.data); Irprincipal() })
+            .then(response => {
+                //console.log('Usuarios:', response.data); 
+                localStorage.setItem('accessToken', response.data.accessToken);
+                localStorage.setItem('refreshToken', response.data.refreshToken);
+                Irprincipal();
+            })
 
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
@@ -60,7 +65,7 @@ const Login = () => {
 
             <div className='flex flex-col items-center justify-center'>
 
-                <div className=' card p-2 w-full sm:max-w-md md:max-w-lg lg:max-w-xl m-20 flex shadow-sm bg-base-200'>
+                <div className=' card p-2 w-full sm:max-w-md md:max-w-lg lg:max-w-xl m-12 flex shadow-sm bg-base-200'>
 
                     <div className='card-body flex flex-col gap-2'>
 

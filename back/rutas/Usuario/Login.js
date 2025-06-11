@@ -9,10 +9,13 @@ JWT_SECRET = process.env.JWT_SECRET
 
 
 router.post('/register', async (req, res) => {
-  const { nombre, email, password, confirmPass } = req.body;
-  const rol = 'usuario'
+  let { nombre, email, password, confirmPass } = req.body;
+
+  let rol = 'usuario'
 
   if (!nombre || !email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
+  email = email.toLowerCase();
 
   if (password != confirmPass) {
     return res.status(400).json({ error: 'Las contraseñas no coinciden' });
@@ -43,12 +46,12 @@ router.post('/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
 
   const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-  if (result.rows.length === 0) return res.status(400).json({ error: 'Credenciales inválidas' });
+  if (result.rows.length === 0) return res.status(400).json({ error: 'Correo no registrado' });
 
   const usuario = result.rows[0];
   const esValida = await bcrypt.compare(password, usuario.password);
 
-  if (!esValida) return res.status(400).json({ error: 'Credenciales inválidas' });
+  if (!esValida) return res.status(400).json({ error: 'Contraseña incorrecta' });
 
   const accessToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '7d' });
@@ -64,7 +67,6 @@ router.post('/refresh-token', async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
     const accessToken = jwt.sign({ id: decoded.id, rol: decoded.rol }, JWT_SECRET, { expiresIn: '15m' });
-
     res.json({ accessToken });
   } catch (err) {
     return res.status(403).json({ error: 'Refresh token inválido o expirado' });

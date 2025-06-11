@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const TemaChanger = () => {
     // Obtener el tema guardado en localStorage o usar "light" por defecto
-    const [tema, setTema] = useState(localStorage.getItem('tema') || 'Custom-orange');
+    const [tema, setTema] = useState(localStorage.getItem('tema') || 'lig');
 
     useEffect(() => {
         // Aplicar el tema guardado al cargar la página
@@ -11,7 +11,7 @@ const TemaChanger = () => {
 
     // Función para alternar entre los temas
     const alternarTema = () => {
-        const nuevoTema = tema === 'Custom-orange' ? 'dark-orange' : 'Custom-orange';
+        const nuevoTema = tema === 'lig' ? 'dark-orange' : 'lig';
         setTema(nuevoTema);
         document.documentElement.setAttribute('data-theme', nuevoTema);
         localStorage.setItem('tema', nuevoTema); // Guardar el tema en localStorage

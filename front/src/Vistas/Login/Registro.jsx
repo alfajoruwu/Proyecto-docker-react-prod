@@ -44,7 +44,6 @@ const Registro = () => {
     // ----- Funciones -----
 
     const CrearCuenta = (Nombre, ConfirmaContrasena, Contrasena, Correo) => {
-
         apiClient.post('/usuarios/register', { email: Correo, password: Contrasena, confirmPass: ConfirmaContrasena, nombre: Nombre })
             .then(response => { console.log('Usuarios:', response.data); mostrarToast(response.data.message, 'success', 3000); IrLogin() })
             .catch(error => { console.error('Error del backend:', error.response.data.error); mostrarToast(error.response.data.error, 'error', 3000); });
@@ -66,7 +65,7 @@ const Registro = () => {
 
             <div className='flex flex-col items-center justify-center'>
 
-                <div className=' card p-2 w-full sm:max-w-md md:max-w-lg lg:max-w-xl m-20 flex shadow-sm bg-base-200'>
+                <div className=' card p-2 w-full sm:max-w-md md:max-w-lg lg:max-w-xl m-12 flex shadow-sm bg-base-200'>
 
                     <div className='card-body flex flex-col '>
 
