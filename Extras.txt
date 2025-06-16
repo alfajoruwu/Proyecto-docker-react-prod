@@ -1,0 +1,94 @@
+{
+	"ImportsSQLFacilito": {
+		"prefix": "SQLImports", // Palabra clave para activar el snippet
+		"body": [
+			"import React, { useContext, useState } from 'react'",
+			"import Navbar from '../../Componentes/Navbar';",
+			"import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'",
+			"import { useToast } from '../../Componentes/ToastContext';",
+			"import { useNavigate } from 'react-router-dom';",
+			"import apiClient from '../../AuxS/Axiosinstance';"
+		],
+		"description": "Imports frecuentes"
+	},
+	"NuevaVariable": {
+		"prefix": "rvar", // Palabra clave para activar el snippet
+		"body": [
+			"const [$1, Set$1] = useState('')",
+			"const Setter$1 = (event) => {",
+			"Set$1(event.target.value)}"
+		],
+		"description": "Crear variable con fucniones"
+	},
+	"Commontiems": {
+		"prefix": "SQLusefull", // Palabra clave para activar el snippet
+		"body": [
+			"const Navigate = useNavigate();",
+			"const { mostrarToast } = useToast();",
+			"const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto)",
+		],
+		"description": "elementos frecuentes"
+	},
+	"Navegar": {
+		"prefix": "navi", // Palabra clave para activar el snippet
+		"body": [
+			"const Ir$1 = () => { Navigate('/$1') }",
+		],
+		"description": "Navegar"
+	},
+	"apiGET": {
+		"prefix": "apiGET", // Palabra clave para activar el snippet
+		"body": [
+			"apiClient.get('/users')",
+			"    .then(response => {console.log('Usuarios:', response.data);})",
+			"    .catch(error => {console.error('Error al obtener usuarios:', error);});",
+		],
+		"description": "ejemplo get"
+	},
+	"apipost": {
+		"prefix": "apipost", // Palabra clave para activar el snippet
+		"body": [
+			"apiClient.post('/login', { email:'',})",
+			"    .then(response => {console.log('Usuarios:', response.data);})",
+			"    .catch(error => { console.error('Error del backend:', error.response.data.error); mostrarToast(error.response.data.error, 'error', 3000); });",
+		],
+		"description": "ejemplo get"
+	},
+	"apipostconfirm": {
+		"prefix": "apiCpost", // Palabra clave para activar el snippet
+		"body": [
+			"apiClient.post('/login', { email:'',})",
+			"    .then(response => {console.log('Usuarios:', response.data); mostrarToast(response.data.message, 'success', 3000); })",
+			"    .catch(error => { console.error('Error del backend:', error.response.data.error); mostrarToast(error.response.data.error, 'error', 3000); });",
+		],
+		"description": "ejemplo get"
+	},
+	"RuseEfect": {
+		"prefix": "RuseEfect", // Palabra clave para activar el snippet
+		"body": [
+			"useEffect(() => {",
+			"console.log('Componente montado');",
+			"return () => {",
+			"console.log('Componente desmontado');",
+			"};",
+			"}, []);",
+		],
+		"description": "ejemplo get"
+	},
+	// Place your global snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+}
