@@ -55,8 +55,8 @@ router.post('/login', async (req, res) => {
 
   const accessToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '7d' });
-
-  res.json({ accessToken, refreshToken });
+  const usuarioDatos = { ID: usuario.id, nombre: usuario.nombre }
+  res.json({ Usuario: usuarioDatos, accessToken, refreshToken });
 });
 
 

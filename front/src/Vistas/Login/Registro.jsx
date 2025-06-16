@@ -56,7 +56,7 @@ const Registro = () => {
 
         <div className='h-screen w-screen'>
 
-            <Navbar />
+            <Navbar MenuLateral={false} />
 
             <div className='flex justify-end items-center mr-4 mt-2 gap-2'>
                 <label>Modo:</label>

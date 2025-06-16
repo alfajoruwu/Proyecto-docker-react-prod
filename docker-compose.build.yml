@@ -11,9 +11,8 @@ services:
     env_file:
       - .env
 
-
   nginx:
-    image: nginx:1.27
+    image: nginx
     ports:
       - "80:80"
     volumes:
@@ -32,8 +31,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./DB/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-
 
 volumes:
   postgres_data:

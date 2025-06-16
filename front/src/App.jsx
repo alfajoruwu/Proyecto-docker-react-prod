@@ -30,6 +30,7 @@ function App() {
             <Route path="/principal" element={<Principal />} />
 
 
+
           </Routes>
         </BrowserRouter>
       </ProveedorEstadoGlobal>
