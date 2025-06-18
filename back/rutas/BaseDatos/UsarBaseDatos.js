@@ -37,3 +37,7 @@ router.get('/ObtenerTabla/:nombre', authMiddleware, Verifica("usuario"), (req, r
     res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
 });
 
+
+
+
+module.exports = router;

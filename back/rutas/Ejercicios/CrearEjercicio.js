@@ -55,3 +55,5 @@ router.delete('/BorrarEjercicio', authMiddleware, Verifica("usuario"), (req, res
     res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
 });
 
+
+module.exports = router;

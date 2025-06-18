@@ -10,15 +10,34 @@ app.use(express.json());
 app.use(cors());
 
 // Rutas
-const usuarios = require('./rutas/Usuario/Login');
 const ejemplos = require('./rutas/Ejemplos/Ejemplos');
 const ejemploProtegida = require('./rutas/Ejemplos/EjemploProtegida');
+
+//Usuarios
+const usuarios = require('./rutas/Usuario/Login');
+
+//DB
+const baseDatosCrear = require('./rutas/BaseDatos/CrearBaseDatos');
+const baseDatosUsar = require('./rutas/BaseDatos/UsarBaseDatos');
+
+//Ejericicos
+const CrearEjercicio = require('./rutas/Ejercicios/CrearEjercicio');
+const Resultados = require('./rutas/Ejercicios/RegistrarInformacion');
+
 
 
 app.use('/usuarios', usuarios);
 
-app.use('/ejemplos', ejemplos);
-app.use('/ejemplos-protegida', ejemploProtegida);
+app.use('/basedatos', baseDatosCrear);
+app.use('/basedatos', baseDatosUsar);
+
+app.use('/ejericicios', CrearEjercicio);
+app.use('/ejericicios', Resultados);
+
+
+//app.use('/ejemplos', ejemplos);
+//app.use('/ejemplos-protegida', ejemploProtegida);
+
 
 
 app.get('/', (req, res) => {

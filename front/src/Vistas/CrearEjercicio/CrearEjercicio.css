@@ -1,0 +1,13 @@
+.CrearEjercicio {
+    display: grid;
+    min-height: 100vh;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+        '. elemento .'
+        '. elemento .'
+}
+
+.elemento {
+    grid-area: elemento
+}

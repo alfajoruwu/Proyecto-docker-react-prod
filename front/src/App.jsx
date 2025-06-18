@@ -9,6 +9,8 @@ import Login from './Vistas/Login/Login';
 import Ejemplo from './Vistas/Ejemplo/Ejemplo';
 import Registro from './Vistas/Login/Registro';
 import Principal from './Vistas/Principal/Principal';
+import CrearDB from './Vistas/CrearDB/CrearDB';
+import CrearEjercicio from './Vistas/CrearEjercicio/CrearEjercicio';
 
 
 function App() {
@@ -28,6 +30,12 @@ function App() {
 
             {/* Principal */}
             <Route path="/principal" element={<Principal />} />
+
+            {/* Crear ejercicios */}
+
+            <Route path='/CrearEjercicio' element={<CrearEjercicio />} />
+            <Route path='/CrearDB' element={<CrearDB />} />
+
 
 
 

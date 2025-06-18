@@ -34,6 +34,10 @@ const Navbar = ({ MenuLateral = true }) => {
         Navigate('/login')
     }
 
+    const IrCrearBaseDatos = () => { Navigate('/CrearDB') }
+    const IrCrearEjercicio = () => { Navigate('/CrearEjercicio') }
+    const IrEjercicios = () => { Navigate('/') }
+
     const IrloginSimple = () => { Navigate('/login') }
 
 
@@ -65,26 +69,28 @@ const Navbar = ({ MenuLateral = true }) => {
 
                                     <div class="divider"></div>
 
+                                    {Nombre != '' &&
+                                        <li><a>Mi perfil</a></li>
 
-                                    <li><a>Mi perfil</a></li>
-                                    <li><a>Resolver ejercicios</a></li>
-                                    <li>
+                                    }
+                                    <li><a onClick={() => IrEjercicios()}>Resolver ejercicios</a></li>
 
-                                        <details className="collapse  border-base-300 ">
-                                            <summary className="collapse-title">Crear ejercicios</summary>
-                                            <div className="collapse-content text-sm">
-                                                <ul>
-                                                    <li>
-                                                        <a>Ejercicios publicados</a>
-                                                        <a>Crear nuevo ejercicio</a>
-                                                        <a>Crear base de datos</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </details>
+                                    {Nombre != '' &&
+                                        <li>
+                                            <details className="collapse  border-base-300 ">
+                                                <summary className="collapse-title">Crear ejercicios</summary>
+                                                <div className="collapse-content text-sm">
+                                                    <ul>
+                                                        <li>
 
-                                    </li>
-
+                                                            <a onClick={() => IrCrearEjercicio()}>Crear nuevo ejercicio</a>
+                                                            <a onClick={() => IrCrearBaseDatos()}>Crear base de datos</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </details>
+                                        </li>
+                                    }
                                     <div class="divider"></div>
                                     <li>
                                         <div className='flex'>

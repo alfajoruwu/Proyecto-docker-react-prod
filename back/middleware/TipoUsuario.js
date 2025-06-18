@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
-    console.log("Token recibido:", token);
+  console.log("Token recibido:", token);
   if (!token) {
     return res.status(401).json({ error: 'Acceso denegado. Token no proporcionado.' });
   }
@@ -16,7 +16,7 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(400).json({ error: 'Token inválido o expirado' });
+    res.status(401).json({ error: 'Token inválido o expirado' });
   }
 };
 

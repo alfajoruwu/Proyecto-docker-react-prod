@@ -14,7 +14,8 @@ CREATE TABLE BaseDatos (
     ID_DB VARCHAR(100),
     SQL_init TEXT,
     Descripcion TEXT,
-    ID_Usuario int, 
+    Resumen TEXT,
+    ID_Usuario int,
     Fecha_Creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ID_Usuario)
         REFERENCES Usuarios(ID)
