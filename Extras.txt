@@ -75,6 +75,67 @@
 		],
 		"description": "ejemplo get"
 	},
+	"GridTempleArea": {
+		"prefix": "gridaria", // Palabra clave para activar el snippet
+		"body": [
+			".$1{",
+			"display: grid;",
+			"min-height: 100vh;",
+			"grid-template-rows: 1fr 1fr; ",
+			"grid-template-columns: 1fr 1fr 1fr;",
+			"grid-template-areas:",
+			"'. elemento .'",
+			"'. elemento .'}",
+			".elemento{",
+			"grid-area: elemento",
+			"}",
+		],
+		"description": "ejemplo get"
+	},
+	"Route": {
+		"prefix": "Route", // Palabra clave para activar el snippet
+		"body": [
+			" <Route path='/$1' element={<$1/>} />",
+		],
+		"description": "Route react"
+	},
+	"Listar": {
+		"prefix": "lista", // Palabra clave para activar el snippet
+		"body": [
+			" $1.map((elemento, index) => (",
+			"  <div></div>",
+			"))",
+		],
+		"description": "Route react"
+	},
+	"rfuncion": {
+		"prefix": "rfuncion", // Palabra clave para activar el snippet
+		"body": [
+			"const $1 = () => {",
+			"",
+			"}",
+		],
+		"description": "Route react"
+	},
+	"PostgreSQLSELECTQuery": {
+		"prefix": "pgselect",
+		"body": [
+			"const result = await pool.query('SELECT * FROM ${1:tabla} WHERE ${2:campo} = \\$1', [${3:valor}]);",
+			"const ResultadoQuery = result.rows[0];"
+		],
+		"description": "Snippet para consulta SELECT básica en PostgreSQL"
+	},
+	"PostgreSQL INSERT usuario con orden personalizado": {
+		"prefix": "pginsert",
+		"body": [
+			"const result = await pool.query(",
+			"  'INSERT INTO ${1:tabla} (${2:valor}) VALUES (\\$1)',",
+			"  [$2]",
+			");",
+			"const ResultadoIncert = result.rows[0];"
+		],
+		"description": "Snippet para insertar un usuario con orden específico de parámetros"
+	}
 	// Place your global snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
 	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
 	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
