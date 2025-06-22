@@ -41,14 +41,8 @@ export const ToastProvider = ({ children }) => {
                             }`}
                     >
                         <span>{mensaje}</span>
-                        {/* Barra de tiempo restante */}
-                        <div
-                            className="h-1 bg-white rounded-full mt-2"
-                            style={{
-                                width: '100%',
-                                animation: `progreso ${duracion}ms linear forwards`,
-                            }}
-                        ></div>
+
+
                     </div>
                 ))}
             </div>

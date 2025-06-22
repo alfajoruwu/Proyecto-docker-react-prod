@@ -1,33 +1,24 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "postgres" <<-EOSQL
-  -- usuario APP_DB_PASS
   CREATE USER $APP_DB_USER WITH PASSWORD '$APP_DB_PASS';
   GRANT CONNECT ON DATABASE postgres TO $APP_DB_USER;
-  
 
-  -- usuario CREACION TABLAS
-  CREATE USER $CreacionTablas_user WITH PASSWORD '$CreacionTablas_pass';
+  CREATE USER $CreacionTablas_user WITH PASSWORD '$CreacionTablas_pass' CREATEDB;
   GRANT CONNECT ON DATABASE postgres TO $CreacionTablas_user;
 
-  \c postgres
 
-  -- ususario APPDBPASS
+  \c postgres
+  GRANT INSERT ON ALL TABLES IN SCHEMA public TO $CreacionTablas_user;
+  REVOKE SELECT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM $CreacionTablas_user;
+
   GRANT SELECT ON ALL TABLES IN SCHEMA public TO $APP_DB_USER;
   REVOKE INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM $APP_DB_USER;
 
   ALTER DEFAULT PRIVILEGES FOR ROLE $APP_DB_USER GRANT SELECT ON TABLES TO $APP_DB_USER;
   ALTER DEFAULT PRIVILEGES FOR ROLE $APP_DB_USER REVOKE INSERT, UPDATE, DELETE ON TABLES FROM $APP_DB_USER;
-  
-  
 
-  -- usuario CreacionTablas
-  GRANT CREATE, USAGE ON SCHEMA public TO $CreacionTablas_user;
-  ALTER ROLE $CreacionTablas_user SET statement_timeout = '15s';
-  
-  GRANT CREATE ON SCHEMA public TO $CreacionTablas_user;  
-  ALTER DEFAULT PRIVILEGES FOR ROLE $CreacionTablas_user GRANT SELECT,INSERT ON TABLES TO $CreacionTablas_user;
-  ALTER DEFAULT PRIVILEGES FOR ROLE $CreacionTablas_user REVOKE UPDATE, DELETE ON TABLES FROM $CreacionTablas_user;
-
+  ALTER DEFAULT PRIVILEGES FOR ROLE $CreacionTablas_user GRANT INSERT ON TABLES TO $CreacionTablas_user;
+  ALTER DEFAULT PRIVILEGES FOR ROLE $CreacionTablas_user REVOKE SELECT, UPDATE, DELETE ON TABLES FROM $CreacionTablas_user;
 
 EOSQL

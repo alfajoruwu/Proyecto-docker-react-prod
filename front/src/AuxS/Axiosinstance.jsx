@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-
+// Nota: Cambiar tambien el refresh
 const apiClient = axios.create({
     baseURL: 'http://localhost:3000', // https://www.sqlfacilito.cl/api
     timeout: 5000,
@@ -33,8 +33,8 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Si hay un error 401 y no se está refrescando ya
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Si hay un error 402 y no se está refrescando ya
+        if (error.response?.status === 402 && !originalRequest._retry) {
             if (isRefreshing) {
                 // Si ya se está refrescando, cola las peticiones
                 return new Promise((resolve, reject) => {
@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
             try {
                 const refreshToken = localStorage.getItem('refreshToken');
 
-                const response = await axios.post('http://localhost:3000/refresh-token', {
+                const response = await axios.post('http://localhost:3000/usuarios/refresh-token', {
                     refreshToken,
                 });
 

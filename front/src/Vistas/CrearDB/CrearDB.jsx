@@ -48,10 +48,6 @@ const CrearDB = () => {
         SetContexto(event.target.value)
     }
 
-    const [SQLinicial, SetSQLinicial] = useState('')
-    const SetterSQLinicial = (event) => {
-        SetSQLinicial(event.target.value)
-    }
 
 
     // --------- Mostrar Elementos --------
@@ -60,6 +56,18 @@ const CrearDB = () => {
 
     const SetterListaBasesDatos = (event) => {
         SetListaBasesDatos(event.target.value)
+    }
+
+    // --------- Archivos ------------
+
+    const [SQLinicial, SetSQLinicial] = useState('')
+    const SetterSQLinicial = (event) => {
+        SetSQLinicial(event.target.value)
+    }
+
+    const [NombreArchivo, SetNombreArchivo] = useState('')
+    const SetterNombreArchivo = (event) => {
+        SetNombreArchivo(event.target.value)
     }
 
     return (
@@ -100,7 +108,7 @@ const CrearDB = () => {
                     <MostrarCartasDB ListaBasesDatos={ListaBasesDatos} />
                 </div>
 
-                <button onClick={() => document.getElementById('Crear_ejercicio').showModal()} className='btn btn-primary fixed right-10 bottom-10 w-19 h-19 rounded-full'>
+                <button onClick={() => document.getElementById('Crear_db').showModal()} className='btn btn-primary fixed right-10 bottom-10 w-19 h-19 rounded-full'>
                     <FaPlus />
                 </button>
 
@@ -108,17 +116,15 @@ const CrearDB = () => {
 
 
             {/* Pop UpS */}
-
-            <dialog id="Crear_ejercicio" className="modal">
-                <div className="modal-box">
-
-                    <FormularioCrearDB Nombre={Nombre} Resumen={Resumen} Contexto={Contexto} seterNombreDB={SetterNombre} seterResumen={SetterResumen} seterContexto={SetterContexto} />
-
+            <dialog id="Crear_db" className="modal">
+                <div className="modal-box w-11/12 max-w-5xl">
+                    <FormularioCrearDB Setcontext={SetContexto} SetResumen={SetResumen} SetNombre={SetNombre} NombreArchivo={NombreArchivo} SeterNombreArchivo={SetNombreArchivo} SQLinicial={SQLinicial} SeterSQLinicial={SetSQLinicial} Nombre={Nombre} Resumen={Resumen} Contexto={Contexto} seterNombreDB={SetterNombre} seterResumen={SetterResumen} seterContexto={SetterContexto} />
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
             </dialog>
+
 
 
         </div>

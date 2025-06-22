@@ -4,16 +4,88 @@ import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
+import { FiFile, FiUpload } from 'react-icons/fi';
+import CodeMirror from '@uiw/react-codemirror';
+import { sql } from '@codemirror/lang-sql';
 
+const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, SeterNombreArchivo, SQLinicial, SeterSQLinicial, Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto }) => {
 
-const FormularioCrearDB = ({ Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto }) => {
+    const Navigate = useNavigate();
+    const { mostrarToast } = useToast();
+    const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto)
 
+    const LimpiarFormularios = () => {
+        SeterNombreArchivo('');
+        SeterSQLinicial('');
+        SetNombre('');
+        SetResumen('');
+        Setcontext('');
+    }
 
     const CrearDB = (Nombre, Resumen, Contexto) => {
-        apiClient.post('/basedatos/CrearDB', { dbName: Nombre, Descripcion: Contexto, Resumen: Resumen })
-            .then(response => { console.log('resultado:', response.data); mostrarToast(response.data.message, 'success', 3000); })
+        apiClient.post('/basedatos/CrearDB', { dbName: Nombre, Descripcion: Contexto, Resumen: Resumen, SQL: SQLinicial })
+            .then(response => { console.log('resultado:', response.data); mostrarToast(response.data.message, 'success', 3000); document.getElementById('Crear_db').close(); LimpiarFormularios() })
             .catch(error => { console.error('Error del backend:', error.response.data.error); mostrarToast(error.response.data.error, 'error', 3000); });
     }
+
+    // Abrir Editar SQL
+    const EditarSQL = () => {
+        SetTempTextoModificar(SQLinicial)
+        document.getElementById('EditarSQL').showModal();
+    }
+
+    // Cancelar cambios
+    const CancelarCambios = () => {
+        document.getElementById('EditarSQL').close();
+        SeterSQLinicial(TempTextoModificar);
+        mostrarToast('Cambios cancelados', 'warning');
+    }
+
+    // Crear nuevo SQL
+    const CrearnuevoINIT = (Texto) => {
+        SeterNombreArchivo('Nuevo.init');
+        SeterSQLinicial(Texto)
+        document.getElementById('EditarSQL').close();
+        mostrarToast('Archivo creado correctamente', 'success');
+    }
+
+    const ModificarINIT = (Texto) => {
+        SeterSQLinicial(Texto)
+        document.getElementById('EditarSQL').close();
+        mostrarToast('Archivo actualizado correctamente', 'success');
+    }
+
+    // Temporal para copia de texto
+    const [TempTextoModificar, SetTempTextoModificar] = useState('')
+    const SetterTempTextoModificar = (event) => {
+        SetTempTextoModificar(event.target.value)
+    }
+
+
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+
+        if (file && file.name.endsWith('.sql')) {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const content = e.target.result;
+                SeterSQLinicial(content);
+                console.log('Contenido del archivo SQL:');
+                console.log(content);
+            };
+
+            SeterNombreArchivo(file.name)
+            console.log(NombreArchivo)
+            reader.readAsText(file);
+            document.getElementById('Subir_Archivo').close()
+        } else {
+
+            SeterNombreArchivo('')
+            SeterSQLinicial('')
+            mostrarToast('Tipo de archivo no compatible', 'error', 3000);
+        }
+    };
 
     return (
         <div className='p-4 gap-6 flex flex-col'>
@@ -22,27 +94,41 @@ const FormularioCrearDB = ({ Nombre, Resumen, Contexto, seterNombreDB, seterResu
 
             <div>
                 <label className='label'>Nombre de la base de datos</label>
-                <input onChange={seterNombreDB} type="text" placeholder="Nombre de base de datos" class="input w-full " />
+                <input value={Nombre} onChange={seterNombreDB} type="text" placeholder="Nombre de base de datos" class="input w-full " />
             </div>
 
             <div className='flex flex-col'>
                 <label className='label'>Resumen</label>
-                <textarea onChange={seterResumen} class="textarea w-full" placeholder="Pequeña descripcion de la base de datos"></textarea>
+                <textarea value={Resumen} onChange={seterResumen} class="textarea w-full" placeholder="Pequeña descripcion de la base de datos"></textarea>
             </div>
 
             <div className='flex flex-col'>
                 <label className='label'>Contexto</label>
-                <textarea onChange={seterContexto} class="textarea w-full" placeholder="En que consiste la base de datos"></textarea>
+                <textarea value={Contexto} onChange={seterContexto} class="textarea w-full" placeholder="En que consiste la base de datos"></textarea>
             </div>
+
+            {
+                NombreArchivo != '' &&
+                <div className="flex bg-success rounded p-3 text-accent-content shadow-lg">
+                    <div className='flex gap-2 '>
+
+                        <h1>Archivo seleccionado: {NombreArchivo}</h1>
+                    </div>
+
+
+                </div>
+            }
+
+
 
             <div className='flex flex-wrap gap-3 w-full'>
                 <button onClick={() => document.getElementById('Subir_Archivo').showModal()} className='btn btn-primary flex-1 min-w-[150px]'>Subir archivo</button>
-                <button onClick={() => document.getElementById('EditarSQL').showModal()} className='btn btn-primary flex-1 min-w-[150px]'>Editar SQL inicial</button>
+                <button onClick={() => EditarSQL()} className='btn btn-primary flex-1 min-w-[150px]'>Editar SQL inicial</button>
             </div>
 
             <div className='flex flex-wrap flex-row w-[100%] gap-3'>
                 <button onClick={() => CrearDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>Crear nueva base de datos</button>
-                <button className='btn flex-1 btn-error'>Limpiar formulario</button>
+                <button onClick={() => { LimpiarFormularios(); }} className='btn flex-1 btn-error'>Limpiar formulario</button>
             </div>
 
 
@@ -50,9 +136,43 @@ const FormularioCrearDB = ({ Nombre, Resumen, Contexto, seterNombreDB, seterResu
             {/* POP-UPS */}
 
             <dialog id="Subir_Archivo" className="modal">
-                <div className="modal-box">
-                    <h3 className="font-bold text-lg">Hello!</h3>
-                    <p className="py-4">Subir archivo</p>
+                <div className="modal-box flex flex-col gap-2 w-11/12 max-w-5xl">
+
+                    <h3 className="font-bold text-lg">Subir archivo SQL.init</h3>
+
+                    <div className='p-6'>
+                        <input onChange={handleFileChange} type="file" class="file-input w-full file-input-primary" />
+                    </div>
+
+                    {
+                        NombreArchivo != '' &&
+                        <div className="flex bg-success rounded p-3 text-accent-content shadow-lg">
+                            <div className='flex gap-2 '>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h1>Tu archivo ha sido cargado correctamente.</h1>
+                            </div>
+
+
+                        </div>
+                    }
+
+                    {
+                        NombreArchivo == '' &&
+                        <div className="flex bg-neutral rounded p-3 text-error-content shadow-lg">
+                            <div className='flex gap-2'>
+                                <h1>Selecciona archivo con formato SQL</h1>
+                            </div>
+                        </div>
+                    }
+
+                    <div className='flex gap-3 flex-row'>
+
+                    </div>
+
+
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
@@ -61,10 +181,55 @@ const FormularioCrearDB = ({ Nombre, Resumen, Contexto, seterNombreDB, seterResu
 
 
             <dialog id="EditarSQL" className="modal">
-                <div className="modal-box">
-                    <h3 className="font-bold text-lg">Hello!</h3>
-                    <p className="py-4">Editar SQL</p>
+                <div className="modal-box w-11/12 max-w-5xl">
+                    <h3 className="font-bold  text-lg">Editor archivo</h3>
+                    <div className='  flex flex-col gap-3 '>
+
+                        <CodeMirror className=''
+                            value={SQLinicial}
+                            height='50vh'
+                            onChange={SeterSQLinicial}
+                            extensions={[sql()]}
+                            basicSetup={{
+                                lineNumbers: true,
+                                highlightActiveLineGutter: true,
+                                highlightSpecialChars: true,
+                                foldGutter: true,
+                                dropCursor: true,
+                                allowMultipleSelections: true,
+                                indentOnInput: true,
+                                syntaxHighlighting: true,
+                                bracketMatching: true,
+                                closeBrackets: true,
+                                autocompletion: true,
+                                rectangularSelection: true,
+                                crosshairCursor: true,
+                                highlightActiveLine: true,
+                                highlightSelectionMatches: true,
+                                closeBracketsKeymap: true,
+                                searchKeymap: true,
+                                foldKeymap: true,
+                                completionKeymap: true,
+                                lintKeymap: true
+                            }}
+
+                        />
+
+                        {NombreArchivo == '' &&
+                            <div className='flex flex-row gap-3'>
+                                <button onClick={() => CrearnuevoINIT(SQLinicial)} className='btn flex-1 btn-primary'>Guardar nuevo archivo</button>
+                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>Cancelar</button>
+                            </div>
+                        }
+                        {NombreArchivo != '' &&
+                            <div className='flex flex-row gap-3'>
+                                <button onClick={() => ModificarINIT(SQLinicial)} className='btn flex-1 btn-primary'>Actualizar</button>
+                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>Cancelar</button>
+                            </div>
+                        }
+                    </div>
                 </div>
+
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
