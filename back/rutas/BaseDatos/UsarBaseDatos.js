@@ -4,38 +4,139 @@ const bcrypt = require('bcryptjs');
 
 const jwt = require('jsonwebtoken');
 const pool = require('../../config/DB');
+const NewPool = require('../../config/DB_lectura.js');
 
 JWT_SECRET = process.env.JWT_SECRET
 
 
 const { authMiddleware, Verifica } = require('../../middleware/TipoUsuario.js');
 
+// --- Función para validar SQL (solo SELECT) ---
+function validarSelectSQL(sql) {
+    if (!sql || typeof sql !== 'string') {
+        return { isValid: false, error: 'La consulta SQL proporcionada no es válida.' };
+    }
 
-router.post('/EjecutarQWERY', authMiddleware, Verifica("usuario"), (req, res) => {
+    // 1. Eliminar comentarios y normalizar espacios
+    let limpio = sql
+        .replace(/--.*$/gm, '')                         // Comentarios línea
+        .replace(/\/\*[\s\S]*?\*\//g, '')               // Comentarios multilinea
+        .replace(/\s+/g, ' ')                           // Reemplazar múltiples espacios por uno
+        .trim();                                        // Eliminar espacios extremos
+
+    // 2. Verificar que comience con SELECT
+    if (!limpio.toUpperCase().startsWith('SELECT')) {
+        return { isValid: false, error: 'Solo se permiten consultas SELECT' };
+    }
+
+    // 3. Verificar expresiones prohibidas
+    const expresionesProhibidas = [
+        /\bINSERT\b/i,
+        /\bUPDATE\b/i,
+        /\bDELETE\b/i,
+        /\bDROP\b/i,
+        /\bALTER\b/i,
+        /\bCREATE\b/i,
+        /\bTRUNCATE\b/i,
+        /\bEXEC\b/i,
+        /\bEXECUTE\b/i,
+        /\bSET\b/i,
+        /\bINTO\b/i,     // Previene SELECT INTO
+        /\bCOPY\b/i,
+        /\bGRANT\b/i,
+        /\bREVOKE\b/i,
+        /\bDOLL\s*\$\s*\$/i, // Bloquea funciones con $$ 
+        /pg_(read|write)_/i,  // Acceso a sistema de archivos
+        /pg_sleep/i,    // Funciones que pueden causar DoS
+        /;/             // Múltiples consultas
+    ];
+
+    for (const prohibida of expresionesProhibidas) {
+        if (prohibida.test(limpio)) {
+            return {
+                isValid: false,
+                error: `Uso de estructura prohibida: "${prohibida.toString()}"`
+            };
+        }
+    }
+
+    // 4. Limitar a una sola consulta
+    if (limpio.indexOf(';') !== -1) {
+        return { isValid: false, error: 'Solo se permite una consulta a la vez' };
+    }
+
+    return { isValid: true };
+}
+
+router.post('/EjecutarQuery', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { dbId, query } = req.body;
+
+    if (!dbId || !query) {
+        return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+    }
+
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+    console.log("Ejecutando query en DB:", dbId);
+
+    try {
+
+        // Validar que la consulta sea solo SELECT
+        const validacion = validarSelectSQL(query);
+        if (!validacion.isValid) {
+            console.error('❌ Query rechazado:', validacion.error);
+            return res.status(400).json({ error: validacion.error });
+        }
+
+        // Usar el pool de solo lectura para mayor seguridad
+        const temp = NewPool('ID_' + dbId);
+
+        // Establecer timeout para evitar consultas que consuman demasiados recursos
+        const queryConfig = {
+            text: query,
+            timeout: 15000  // 5 segundos de timeout
+        };
+
+        // Ejecutar la consulta
+        const startTime = Date.now();
+        const result = await temp.query(queryConfig);
+        const executionTime = Date.now() - startTime;
+
+        // Información sobre las columnas para el frontend
+        const columnas = result.fields ?
+            result.fields.map(field => ({
+                nombre: field.name,
+                tipo: field.dataTypeID
+            })) : [];
+
+        res.json({
+            message: 'Consulta ejecutada correctamente',
+            columnas: columnas,
+            filas: result.rows,
+            tiempo: `${executionTime} ms`,
+            registros: result.rowCount
+        });
+    } catch (err) {
+        console.error(`❌ Error ejecutando la consulta:`, err.message);
+        return res.status(500).json({
+            error: 'Error ejecutando la consulta',
+            detalle: err.message
+        });
+    }
+});
+
+router.post('/GuardarQuery', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { dbId, nombre, descripcion, query } = req.body;
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
 
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
+    // Lógica para guardar la consulta en la base de datos
+    // Implementar cuando tengas la tabla para almacenar consultas guardadas
+
+    res.json({ message: 'Consulta guardada correctamente' });
 });
 
-
-router.get('/ObtenerTablas', authMiddleware, Verifica("usuario"), (req, res) => {
-
-    console.log("Usuario autenticado:", req.user.id);
-    console.log("Rol del usuario:", req.user.rol);
-
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
-});
-
-
-router.get('/ObtenerTabla/:nombre', authMiddleware, Verifica("usuario"), (req, res) => {
-
-    console.log("Usuario autenticado:", req.user.id);
-    console.log("Rol del usuario:", req.user.rol);
-
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
-});
 
 
 

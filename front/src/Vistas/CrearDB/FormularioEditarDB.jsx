@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import Navbar from '../../Componentes/Navbar';
 import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
@@ -8,12 +8,49 @@ import { FaFilePen } from "react-icons/fa6";
 import { FaFileArrowUp } from "react-icons/fa6";
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../../AuxS/Axiosinstance';
+import { FaFilePen } from "react-icons/fa6";
+import { FaFileArrowUp } from "react-icons/fa6";
+import CodeMirror from '@uiw/react-codemirror';
+import { sql } from '@codemirror/lang-sql';
 
-const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, SeterNombreArchivo, SQLinicial, SeterSQLinicial, Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto, onCreateSuccess }) => {
+const FormularioEditarDB = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArchivo, SeterNombreArchivo, SQLinicial, SeterSQLinicial, Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto, onEditSuccess }) => {
 
     const Navigate = useNavigate();
     const { mostrarToast } = useToast();
-    const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto)
+    const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto);
+    const [cargando, setCargando] = useState(false);
+
+    // Cargar datos de la base de datos seleccionada
+    useEffect(() => {
+        if (dbId) {
+            setCargando(true);
+            apiClient.get(`/basedatos/ObtenerDB/${dbId}`)
+                .then(response => {
+                    console.log('Datos de la base de datos:', response.data);
+                    // Actualizar el formulario con los datos obtenidos
+                    if (response.data && response.data.DB) {
+                        const db = response.data.DB;
+                        SetNombre(db.nombre || '');
+                        SetResumen(db.resumen || '');
+                        Setcontext(db.descripcion || '');
+
+                        // Si hay estructura, mostrarla en el editor SQL
+                        if (response.data.estructura) {
+                            // Podríamos mostrar la estructura como información adicional
+                            console.log('Estructura de la base de datos:', response.data.estructura);
+                        }
+                    }
+                    setCargando(false);
+                })
+                .catch(error => {
+                    console.error('Error obteniendo datos de la base de datos:', error);
+                    mostrarToast('Error al cargar la base de datos', 'error', 3000);
+                    setCargando(false);
+                });
+        }
+    }, [dbId, SetNombre, SetResumen, Setcontext]);
 
     const LimpiarFormularios = () => {
         SeterNombreArchivo('');
@@ -23,20 +60,17 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
         Setcontext('');
     }
 
-    const CrearDB = (Nombre, Resumen, Contexto) => {
-        apiClient.post('/basedatos/CrearDB', { dbName: Nombre, Descripcion: Contexto, Resumen: Resumen, SQL: SQLinicial })
+    const EditarDB = (Nombre, Resumen, Contexto) => {
+        apiClient.put('/basedatos/EditarDB', { dbId: dbId, dbName: Nombre, Descripcion: Contexto, Resumen: Resumen })
             .then(response => {
                 console.log('resultado:', response.data);
                 mostrarToast(response.data.message, 'success', 3000);
-                document.getElementById('Crear_db').close();
-                LimpiarFormularios();
-                if (onCreateSuccess) {
-                    onCreateSuccess();
-                }
+                document.getElementById('Editar_db').close();
+                if (onEditSuccess) onEditSuccess(); // Actualizar la lista después de editar
             })
             .catch(error => {
                 console.error('Error del backend:', error.response?.data?.error || error.message);
-                mostrarToast(error.response?.data?.error || 'Error al crear la base de datos', 'error', 3000);
+                mostrarToast(error.response?.data?.error || 'Error al editar la base de datos', 'error', 3000);
             });
     }
 
@@ -102,7 +136,8 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
     return (
         <div className='p-4 gap-6 flex flex-col'>
 
-            <h1 class="text-2xl font-bold mb-6 text-center">Crear base de datos</h1>
+            <h1 class="text-2xl font-bold mb-6 text-center">Editar base de datos</h1>
+            {cargando && <div className="flex justify-center mb-4"><span className="loading loading-spinner loading-lg text-primary"></span></div>}
 
             <div>
                 <label className='label'>Nombre de la base de datos</label>
@@ -133,15 +168,9 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
 
 
 
-            <div className='flex flex-wrap gap-3 w-full'>
-                <button onClick={() => document.getElementById('Subir_Archivo').showModal()} className='btn h-20 btn-primary text-xl flex-1'> <div className='flex flex-col items-center gap-3'><text>Subir archivo</text>  <FaFileArrowUp size="1.5rem" /></div> </button>
-
-                <button onClick={() => EditarSQL()} className='btn btn-primary flex-1 h-20 text-xl'> <div className='flex flex-col items-center gap-3'> <text>Editar SQL inicial</text>  <FaFilePen size="1.5rem" /></div> </button>
-            </div>
-
             <div className='flex flex-wrap flex-row w-[100%] gap-3'>
-                <button onClick={() => CrearDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>Crear nueva base de datos</button>
-                <button onClick={() => { LimpiarFormularios(); }} className='btn flex-1 btn-error'>Limpiar formulario</button>
+                <button onClick={() => EditarDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>Guardar cambios</button>
+                <button onClick={() => { document.getElementById('Editar_db').close(); }} className='btn flex-1 btn-error'>Cancelar</button>
             </div>
 
 
@@ -255,4 +284,4 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
     )
 }
 
-export default FormularioCrearDB
+export default FormularioEditarDB

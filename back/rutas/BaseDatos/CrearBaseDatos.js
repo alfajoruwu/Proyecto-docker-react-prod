@@ -130,39 +130,229 @@ router.post('/CrearDB', authMiddleware, Verifica("usuario"), async (req, res) =>
 });
 
 
-router.get('/ObtenerDBs', authMiddleware, Verifica("usuario"), (req, res) => {
+router.get('/ObtenerDBs', authMiddleware, Verifica("usuario"), async (req, res) => {
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
 
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
+    const result = await pool.query('SELECT ID,Nombre,Descripcion,Resumen,Fecha_Creacion FROM BaseDatos WHERE  ID_Usuario = $1', [req.user.id]);
+
+    const ResultadoQuery = result.rows[0];
+
+    res.json({ message: 'Tdoas las bases de datos', DB: result });
+});
+
+router.get('/ObtenerDB/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const dbId = req.params.id;
+
+    if (!dbId) {
+        return res.status(400).json({ error: 'ID de base de datos no proporcionado' });
+    }
+
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+    console.log("Obteniendo DB con ID:", dbId);
+
+    try {
+        // Verificar que la DB pertenezca al usuario
+        const dbCheck = await pool.query(
+            'SELECT ID FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+            [dbId, req.user.id]
+        );
+
+        if (dbCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'No tienes acceso a esta base de datos' });
+        }
+
+        // Obtener detalles de la DB
+        const result = await pool.query(
+            'SELECT ID, Nombre, Descripcion, Resumen, Fecha_Creacion FROM BaseDatos WHERE ID = $1',
+            [dbId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Base de datos no encontrada' });
+        }
+
+        const dbData = result.rows[0];
+
+        // Obtener estructura de tablas y sus datos
+        try {
+            const temp = NewPool('ID_' + dbId);
+
+            // Obtener lista de tablas
+            const tablasResult = await temp.query(`
+                SELECT 
+                    table_name 
+                FROM 
+                    information_schema.tables 
+                WHERE 
+                    table_schema = 'public'
+            `);
+
+            // Estructura para almacenar tablas, columnas y filas
+            const estructura = [];
+
+            // Para cada tabla, obtener sus datos y estructura
+            for (const tabla of tablasResult.rows) {
+                try {
+                    // Hacer SELECT * para obtener datos y columnas
+                    const datosResult = await temp.query(`SELECT * FROM "${tabla.table_name}"`);
+
+                    // Obtener estructura de columnas a partir de los metadatos de la consulta
+                    const columnas = datosResult.fields ?
+                        datosResult.fields.map(field => ({
+                            nombre: field.name,
+                            tipo: field.dataTypeID
+                        })) : [];
+
+                    // Agregar tabla con su estructura y datos a la respuesta
+                    estructura.push({
+                        nombre: tabla.table_name,
+                        columnas: columnas,
+                        filas: datosResult.rows
+                    });
+                } catch (err) {
+                    console.error(`Error obteniendo datos de la tabla ${tabla.table_name}:`, err.message);
+                    estructura.push({
+                        nombre: tabla.table_name,
+                        error: `No se pudieron obtener datos: ${err.message}`
+                    });
+                }
+            }
+
+            res.json({
+                message: 'Base de datos obtenida',
+                DB: dbData,
+                estructura: estructura
+            });
+        } catch (err) {
+            console.error(`Error obteniendo estructura de la base de datos:`, err.message);
+            // Si falla la obtención de estructura, al menos devolvemos los datos básicos
+            res.json({ message: 'Base de datos obtenida (sin estructura)', DB: dbData });
+        }
+    } catch (err) {
+        console.error(`❌ Error obteniendo la base de datos:`, err.message);
+        return res.status(500).json({ error: 'Error al obtener la base de datos' });
+    }
 });
 
 
-router.get('/ObtenerDB/:id', authMiddleware, Verifica("usuario"), (req, res) => {
+router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { dbId, dbName, Descripcion, Resumen } = req.body;
+
+    if (!dbId) {
+        return res.status(400).json({ error: 'ID de base de datos no proporcionado' });
+    }
+
+    if (!dbName && !Descripcion && !Resumen) {
+        return res.status(400).json({ error: 'No se proporcionaron datos para actualizar' });
+    }
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
+    console.log("Editando DB con ID:", dbId);
 
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
+    try {
+        // Verificar que la DB pertenezca al usuario
+        const dbCheck = await pool.query(
+            'SELECT ID FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+            [dbId, req.user.id]
+        );
+
+        if (dbCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'No tienes acceso a esta base de datos' });
+        }
+
+        // Usamos COALESCE para actualizar solo los campos proporcionados
+        // Si un campo no se proporciona, mantenemos el valor existente
+        const updateQuery = `
+            UPDATE BaseDatos 
+            SET 
+                Nombre = COALESCE($1, Nombre),
+                Descripcion = COALESCE($2, Descripcion),
+                Resumen = COALESCE($3, Resumen)
+            WHERE ID = $4 AND ID_Usuario = $5
+            RETURNING ID, Nombre, Descripcion, Resumen, Fecha_Creacion
+        `;
+
+        // Pasamos los valores o null si no existen
+        const result = await pool.query(
+            updateQuery,
+            [
+                dbName || null,
+                Descripcion || null,
+                Resumen || null,
+                dbId,
+                req.user.id
+            ]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Base de datos no encontrada' });
+        }
+
+        res.json({
+            message: 'Base de datos actualizada correctamente',
+            DB: result.rows[0]
+        });
+    } catch (err) {
+        console.error(`❌ Error actualizando la base de datos:`, err.message);
+        return res.status(500).json({ error: 'Error al actualizar la base de datos' });
+    }
 });
 
 
-router.put('/EditarDB', authMiddleware, Verifica("usuario"), (req, res) => {
+router.delete('/BorrarDB/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const dbId = req.params.id;
+
+    if (!dbId) {
+        return res.status(400).json({ error: 'ID de base de datos no proporcionado' });
+    }
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
+    console.log("Eliminando DB con ID:", dbId);
 
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
-});
+    try {
+        // Verificar que la DB pertenezca al usuario
+        const dbCheck = await pool.query(
+            'SELECT ID FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+            [dbId, req.user.id]
+        );
 
+        if (dbCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'No tienes acceso a esta base de datos' });
+        }
 
-router.delete('/BorrarDB', authMiddleware, Verifica("usuario"), (req, res) => {
+        // Eliminar la base de datos del registro
+        const deleteResult = await pool.query(
+            'DELETE FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2 RETURNING ID',
+            [dbId, req.user.id]
+        );
 
-    console.log("Usuario autenticado:", req.user.id);
-    console.log("Rol del usuario:", req.user.rol);
+        if (deleteResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Base de datos no encontrada' });
+        }
 
-    res.json({ message: 'Acceso permitido a la ruta protegida', usuario: req.user });
+        // Eliminar la base de datos física
+        try {
+            const dropQuery = `DROP DATABASE IF EXISTS "ID_${dbId}"`;
+            await poolCreacion.query(dropQuery);
+            console.log(`✅ Base de datos eliminada: "ID_${dbId}"`);
+        } catch (err) {
+            console.error(`❌ Error eliminando la base de datos "ID_${dbId}":`, err.message);
+            // Incluso si hay error aquí, continuamos ya que el registro ya fue eliminado
+        }
+
+        res.json({
+            message: 'Base de datos eliminada correctamente',
+            dbId: deleteResult.rows[0].ID
+        });
+    } catch (err) {
+        console.error(`❌ Error eliminando la base de datos:`, err.message);
+        return res.status(500).json({ error: 'Error al eliminar la base de datos' });
+    }
 });
 
 

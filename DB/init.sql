@@ -39,13 +39,30 @@ CREATE TABLE Ejercicios (
         ON DELETE CASCADE
 );
 
-CREATE TABLE Intentos (
+CREATE TABLE EjecucionesSQL (
     ID SERIAL PRIMARY KEY,
     ID_Usuario INT NOT NULL,
     ID_Ejercicio INT NOT NULL,
     Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    SQL_Ejecucion TEXT NOT NULL,
+    Resultado TEXT,
+    FOREIGN KEY (ID_Usuario)
+        REFERENCES Usuarios(ID)
+        ON DELETE CASCADE,
+    FOREIGN KEY (ID_Ejercicio)
+        REFERENCES Ejercicios(ID)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE Intentos (
+    ID SERIAL PRIMARY KEY,
+    ID_Usuario INT NOT NULL,
+    Tipo VARCHAR(50) NOT NULL,
+    ID_Ejercicio INT NOT NULL,
+    Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     SQL_Intento TEXT NOT NULL,
     Es_Correcto BOOLEAN,
+    Resultado_CSV TEXT,
     FOREIGN KEY (ID_Usuario)
         REFERENCES Usuarios(ID)
         ON DELETE CASCADE,

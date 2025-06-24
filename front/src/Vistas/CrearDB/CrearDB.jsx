@@ -2,16 +2,17 @@
 
 import './CrearDB.css'
 
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import Navbar from '../../Componentes/Navbar';
 import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
+
 import apiClient from '../../AuxS/Axiosinstance';
 import MostrarCartasDB from './MostrarCartasDB';
 import FormularioCrearDB from './FormularioCrearDB';
 import { FaPlus } from "react-icons/fa";
-import FormularioModerno from '../Ejemplo/FormularioModerno';
+import FormularioEditarDB from './FormularioEditarDB';
 const CrearDB = () => {
 
     // Variables formulario
@@ -52,11 +53,9 @@ const CrearDB = () => {
 
     // --------- Mostrar Elementos --------
 
-    const [ListaBasesDatos, SetListaBasesDatos] = useState([{ Nombre: "SQL Facilito" }, { Nombre: "Banco de ejemplo" }, { Nombre: "SQL Facilito" }, { Nombre: "SQL Facilito" }, { Nombre: "SQL Facilito" }])
-
-    const SetterListaBasesDatos = (event) => {
-        SetListaBasesDatos(event.target.value)
-    }
+    const [ListaBasesDatos, SetListaBasesDatos] = useState([])
+    const [cargando, setCargando] = useState(false);
+    const [dbIdAEditar, setDbIdAEditar] = useState(null);
 
     // --------- Archivos ------------
 
@@ -69,6 +68,50 @@ const CrearDB = () => {
     const SetterNombreArchivo = (event) => {
         SetNombreArchivo(event.target.value)
     }
+
+    // Cargar bases de datos
+    const cargarBasesDatos = () => {
+        setCargando(true);
+        apiClient.get('/basedatos/ObtenerDBs')
+            .then(response => {
+                console.log('Base de datos obtenidas:', response.data);
+                if (response.data && response.data.DB && response.data.DB.rows) {
+                    SetListaBasesDatos(response.data.DB.rows);
+                }
+                setCargando(false);
+            })
+            .catch(error => {
+                console.error('Error al obtener bases de datos:', error);
+                mostrarToast('Error al cargar las bases de datos', 'error', 3000);
+                setCargando(false);
+            });
+    };
+
+    useEffect(() => {
+        cargarBasesDatos();
+    }, []);
+
+    // Manejar la edición de una base de datos
+    const handleEditarDB = (id) => {
+        setDbIdAEditar(id);
+        document.getElementById('Editar_db').showModal();
+    };
+
+    // Manejar el borrado de una base de datos
+    const handleBorrarDB = (id) => {
+        setCargando(true);
+        apiClient.delete(`/basedatos/BorrarDB/${id}`)
+            .then(response => {
+                console.log('Base de datos eliminada:', response.data);
+                mostrarToast('Base de datos eliminada correctamente', 'success', 3000);
+                cargarBasesDatos(); // Recargar la lista
+            })
+            .catch(error => {
+                console.error('Error al eliminar base de datos:', error);
+                mostrarToast(error.response?.data?.error || 'Error al eliminar la base de datos', 'error', 3000);
+                setCargando(false);
+            });
+    };
 
     return (
         <div className='CrearDB'>
@@ -105,7 +148,17 @@ const CrearDB = () => {
                 </div>
 
                 <div className='MostrarDB p-3'>
-                    <MostrarCartasDB ListaBasesDatos={ListaBasesDatos} />
+                    {cargando ? (
+                        <div className="flex justify-center p-10">
+                            <span className="loading loading-spinner loading-lg text-primary"></span>
+                        </div>
+                    ) : (
+                        <MostrarCartasDB
+                            ListaBasesDatos={ListaBasesDatos}
+                            onEditarDB={handleEditarDB}
+                            onBorrarDB={handleBorrarDB}
+                        />
+                    )}
                 </div>
 
                 <button onClick={() => document.getElementById('Crear_db').showModal()} className='btn btn-primary fixed right-10 bottom-10 w-19 h-19 rounded-full'>
@@ -118,7 +171,47 @@ const CrearDB = () => {
             {/* Pop UpS */}
             <dialog id="Crear_db" className="modal">
                 <div className="modal-box w-11/12 max-w-5xl">
-                    <FormularioCrearDB Setcontext={SetContexto} SetResumen={SetResumen} SetNombre={SetNombre} NombreArchivo={NombreArchivo} SeterNombreArchivo={SetNombreArchivo} SQLinicial={SQLinicial} SeterSQLinicial={SetSQLinicial} Nombre={Nombre} Resumen={Resumen} Contexto={Contexto} seterNombreDB={SetterNombre} seterResumen={SetterResumen} seterContexto={SetterContexto} />
+                    <FormularioCrearDB
+                        Setcontext={SetContexto}
+                        SetResumen={SetResumen}
+                        SetNombre={SetNombre}
+                        NombreArchivo={NombreArchivo}
+                        SeterNombreArchivo={SetNombreArchivo}
+                        SQLinicial={SQLinicial}
+                        SeterSQLinicial={SetSQLinicial}
+                        Nombre={Nombre}
+                        Resumen={Resumen}
+                        Contexto={Contexto}
+                        seterNombreDB={SetterNombre}
+                        seterResumen={SetterResumen}
+                        seterContexto={SetterContexto}
+                        onCreateSuccess={cargarBasesDatos}
+                    />
+                </div>
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+
+            <dialog id="Editar_db" className="modal">
+                <div className="modal-box w-11/12 max-w-5xl">
+                    <FormularioEditarDB
+                        dbId={dbIdAEditar}
+                        Setcontext={SetContexto}
+                        SetResumen={SetResumen}
+                        SetNombre={SetNombre}
+                        NombreArchivo={NombreArchivo}
+                        SeterNombreArchivo={SetNombreArchivo}
+                        SQLinicial={SQLinicial}
+                        SeterSQLinicial={SetSQLinicial}
+                        Nombre={Nombre}
+                        Resumen={Resumen}
+                        Contexto={Contexto}
+                        seterNombreDB={SetterNombre}
+                        seterResumen={SetterResumen}
+                        seterContexto={SetterContexto}
+                        onEditSuccess={cargarBasesDatos}
+                    />
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
