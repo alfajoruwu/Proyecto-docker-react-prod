@@ -1,13 +1,18 @@
 .CrearEjercicio {
     display: grid;
     min-height: 100vh;
-    grid-template-rows: 1fr 1fr;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+
     grid-template-areas:
-        '. elemento .'
-        '. elemento .'
+        'Navbar'
+        'ContenidoA'
 }
 
-.elemento {
-    grid-area: elemento
+.Navbar {
+    grid-area: Navbar
+}
+
+.ContenidoA {
+    grid-area: ContenidoA
 }

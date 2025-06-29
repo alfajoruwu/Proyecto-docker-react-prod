@@ -1,5 +1,6 @@
 // ToastContext.js
 import React, { createContext, useContext, useState } from 'react';
+import ReactDOM from 'react-dom'; // 👈 1. Importa ReactDOM
 
 // Tipos de toast
 // mostrarToast(mensaje, 'success', duracion);
@@ -29,23 +30,24 @@ export const ToastProvider = ({ children }) => {
             {children}
 
             {/* Renderizar todos los toasts */}
-            <div className="fixed bottom-4 right-4 space-y-2 z-50">
-                {toasts.map(({ id, mensaje, tipo, duracion }) => (
-                    <div
-                        key={id}
-                        className={`alert shadow-lg ${tipo === 'success'
-                            ? 'alert-success'
-                            : tipo === 'error'
-                                ? 'alert-error'
-                                : 'alert-warning'
-                            }`}
-                    >
-                        <span>{mensaje}</span>
-
-
-                    </div>
-                ))}
-            </div>
+            {ReactDOM.createPortal(
+                <div className="toast toast-end">
+                    {toasts.map(({ id, mensaje, tipo }) => (
+                        <div
+                            key={id}
+                            className={`alert shadow-lg ${tipo === 'success'
+                                ? 'alert-success'
+                                : tipo === 'error'
+                                    ? 'alert-error'
+                                    : 'alert-warning'
+                                }`}
+                        >
+                            <span>{mensaje}</span>
+                        </div>
+                    ))}
+                </div>,
+                document.body
+            )}
         </ToastContext.Provider>
     );
 };

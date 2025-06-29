@@ -30,6 +30,11 @@ CREATE TABLE Ejercicios (
     Descripcion TEXT,
     SQL_Solucion TEXT NOT NULL,
     ID_BaseDatos INT NOT NULL,
+    PermitirIA BOOLEAN,
+    PermitirSolucion BOOLEAN,
+    Topicos TEXT[],
+    Dificultad int,
+
     Fecha_Creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ID_Usuario)
         REFERENCES Usuarios(ID)

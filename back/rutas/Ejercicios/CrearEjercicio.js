@@ -49,10 +49,10 @@ function validarSelectSQL(sql) {
 }
 
 router.post('/CrearEjercicio', authMiddleware, Verifica("usuario"), async (req, res) => {
-    const { nombre, problema, descripcion, solucionSQL, dbId } = req.body;
-
-    if (!nombre || !problema || !solucionSQL || !dbId) {
-        return res.status(400).json({ error: 'Faltan datos obligatorios para crear el ejercicio' });
+    const { nombre, problema, descripcion, solucionSQL, dbId, permitirIA, verRespuestaEsperada, topicos, dificultad } = req.body;
+    console.log("Datos recibidos para crear ejercicio:", req.body);
+    if (!nombre || !problema || !descripcion || !solucionSQL || !dbId || dificultad === undefined) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
 
     console.log("Usuario autenticado:", req.user.id);

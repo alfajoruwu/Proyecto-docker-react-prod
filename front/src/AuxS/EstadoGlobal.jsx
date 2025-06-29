@@ -12,6 +12,63 @@ export const ProveedorEstadoGlobal = ({ children }) => {
   const [Rol, SetRol] = useState('')
 
 
+  // formulario ejercicio
+
+  const [NombreEjercicio, SetNombreEjercicio] = useState('')
+  const SetterNombreEjercicio = (event) => {
+    SetNombreEjercicio(event.target.value)
+  }
+
+  const [ResumenEjercicio, SetResumenEjercicio] = useState('')
+  const SetterResumenEjercicio = (event) => {
+    SetResumenEjercicio(event.target.value)
+  }
+
+  const [ProblemaEjercicio, SetProblemaEjercicio] = useState('')
+  const SetterProblemaEjercicio = (event) => {
+    SetProblemaEjercicio(event.target.value)
+  }
+
+  const [DificultadEjercicio, SetDificultadEjercicio] = useState(2)
+  const SetterDificultadEjercicio = (event) => {
+    SetDificultadEjercicio(event.target.value)
+  }
+
+  const [PermitirIAEjercicio, SetPermitirIAEjercicio] = useState(true)
+  const SetterPermitirIAEjercicio = (event) => {
+    SetPermitirIAEjercicio(event.target.checked)
+  }
+
+  const [VerRespuestaEsperada, SetVerRespuestaEsperada] = useState(true)
+  const SetterVerRespuestaEsperada = (event) => {
+    SetVerRespuestaEsperada(event.target.checked)
+  }
+
+  const [IDDBSeleccionadaEjercicio, IDSetDBSeleccionadaEjercicio] = useState('')
+  const IDSetterDBSeleccionadaEjercicio = (event) => {
+    IDSetDBSeleccionadaEjercicio(event.target.value)
+  }
+
+  const [SolucionEjercicio, SetSolucionEjercicio] = useState('')
+  const SetterSolucionEjercicio = (event) => {
+    SetSolucionEjercicio(event.target.value)
+  }
+
+  const [ListaTopicosEjercicios, SetListaTopicosEjercicios] = useState([])
+  const SetterListaTopicosEjercicios = (event) => {
+    SetListaTopicosEjercicios(event.target.value)
+  }
+  const [TablaSolucionEjercicio, SetTablaSolucionEjercicio] = useState('')
+  const SetterTablaSolucionEjercicio = (event) => {
+    SetTablaSolucionEjercicio(event.target.value)
+  }
+
+  const [ListaTopicosEjercicio, SetListaTopicosEjercicio] = useState('')
+  const SetterListaTopicosEjercicio = (event) => {
+    SetListaTopicosEjercicio(event.target.value)
+  }
+
+  const [topicosSeleccionados, setTopicosSeleccionados] = useState([]);
   return (
     // Variables
     <EstadoGlobalContexto.Provider value={
@@ -20,7 +77,18 @@ export const ProveedorEstadoGlobal = ({ children }) => {
         Logeado, SetLogedao,
         Nombre, SetNombre,
         Rol, SetRol,
-
+        topicosSeleccionados, setTopicosSeleccionados,
+        NombreEjercicio, SetNombreEjercicio, SetterNombreEjercicio,
+        ResumenEjercicio, SetResumenEjercicio, SetterResumenEjercicio,
+        ProblemaEjercicio, SetProblemaEjercicio, SetterProblemaEjercicio,
+        DificultadEjercicio, SetDificultadEjercicio, SetterDificultadEjercicio,
+        PermitirIAEjercicio, SetPermitirIAEjercicio, SetterPermitirIAEjercicio,
+        VerRespuestaEsperada, SetVerRespuestaEsperada, SetterVerRespuestaEsperada,
+        IDDBSeleccionadaEjercicio, IDSetDBSeleccionadaEjercicio, IDSetterDBSeleccionadaEjercicio,
+        SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio,
+        ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios,
+        TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
+        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio
       }}>
       {children}
     </EstadoGlobalContexto.Provider>

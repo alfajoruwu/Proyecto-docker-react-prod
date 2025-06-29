@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../../config/DB');
 const NewPool = require('../../config/DB_lectura.js');
-
+const NewPool_create = require('../../config/DB_Incert.js');
 JWT_SECRET = process.env.JWT_SECRET
 
 
@@ -24,16 +24,12 @@ function validarSelectSQL(sql) {
         .replace(/\s+/g, ' ')                           // Reemplazar múltiples espacios por uno
         .trim();                                        // Eliminar espacios extremos
 
-    // 2. Verificar que comience con SELECT
-    if (!limpio.toUpperCase().startsWith('SELECT')) {
-        return { isValid: false, error: 'Solo se permiten consultas SELECT' };
-    }
+
 
     // 3. Verificar expresiones prohibidas
     const expresionesProhibidas = [
         /\bINSERT\b/i,
         /\bUPDATE\b/i,
-        /\bDELETE\b/i,
         /\bDROP\b/i,
         /\bALTER\b/i,
         /\bCREATE\b/i,
@@ -48,7 +44,6 @@ function validarSelectSQL(sql) {
         /\bDOLL\s*\$\s*\$/i, // Bloquea funciones con $$ 
         /pg_(read|write)_/i,  // Acceso a sistema de archivos
         /pg_sleep/i,    // Funciones que pueden causar DoS
-        /;/             // Múltiples consultas
     ];
 
     for (const prohibida of expresionesProhibidas) {
@@ -60,10 +55,6 @@ function validarSelectSQL(sql) {
         }
     }
 
-    // 4. Limitar a una sola consulta
-    if (limpio.indexOf(';') !== -1) {
-        return { isValid: false, error: 'Solo se permite una consulta a la vez' };
-    }
 
     return { isValid: true };
 }
@@ -89,12 +80,12 @@ router.post('/EjecutarQuery', authMiddleware, Verifica("usuario"), async (req, r
         }
 
         // Usar el pool de solo lectura para mayor seguridad
-        const temp = NewPool('ID_' + dbId);
+        const temp = NewPool_create('ID_' + dbId);
 
         // Establecer timeout para evitar consultas que consuman demasiados recursos
         const queryConfig = {
             text: query,
-            timeout: 15000  // 5 segundos de timeout
+            timeout: 15000  // 15 segundos de timeout
         };
 
         // Ejecutar la consulta

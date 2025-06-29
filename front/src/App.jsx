@@ -11,6 +11,9 @@ import Registro from './Vistas/Login/Registro';
 import Principal from './Vistas/Principal/Principal';
 import CrearDB from './Vistas/CrearDB/CrearDB';
 import CrearEjercicio from './Vistas/CrearEjercicio/CrearEjercicio';
+import CrearSolucion from './Vistas/EjecucionSQL/CrearSolucion';
+import ProbarDB from './Vistas/EjecucionSQL/ProbarDB';
+import RealizarEjercicio from './Vistas/EjecucionSQL/RealizarEjercicio';
 
 
 function App() {
@@ -37,7 +40,12 @@ function App() {
             <Route path='/CrearDB' element={<CrearDB />} />
 
 
+            {/* ejecucion de SQL */}
+            <Route path='/CrearSolucion' element={<CrearSolucion />} />
+            <Route path='/ProbarDB' element={<ProbarDB />} />
+            <Route path='/RealizarEjercicio' element={<RealizarEjercicio />} />
 
+            {/* Rutas de ejemplo */}
 
           </Routes>
         </BrowserRouter>

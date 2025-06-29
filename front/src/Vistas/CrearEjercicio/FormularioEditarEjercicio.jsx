@@ -9,7 +9,10 @@ import { FaFileArrowUp } from "react-icons/fa6";
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 
-const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, SeterNombreArchivo, SQLinicial, SeterSQLinicial, Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto, onCreateSuccess }) => {
+import { useEffect } from 'react';
+
+
+const FormularioEditarEjercicio = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArchivo, SeterNombreArchivo, SQLinicial, SeterSQLinicial, Nombre, Resumen, Contexto, seterNombreDB, seterResumen, seterContexto, onCreateSuccess }) => {
 
     const Navigate = useNavigate();
     const { mostrarToast } = useToast();
@@ -23,12 +26,16 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
         Setcontext('');
     }
 
-    const CrearDB = (Nombre, Resumen, Contexto) => {
-        apiClient.post('/basedatos/CrearDB', { dbName: Nombre, Descripcion: Contexto, Resumen: Resumen, SQL: SQLinicial })
+
+    const ModificarDB = (Nombre, Resumen, Contexto, SQL, idDB) => {
+
+        console.log('Modificando base de datos:', Nombre, Resumen, Contexto, SQL, idDB);
+
+        apiClient.put('/basedatos/EditarDB', { dbName: Nombre, Descripcion: Contexto, Resumen: Resumen, SQL: SQL, dbId: idDB })
             .then(response => {
                 console.log('resultado:', response.data);
                 mostrarToast(response.data.message, 'success', 3000);
-                document.getElementById('Crear_db').close();
+                document.getElementById('Editar_db').close();
                 LimpiarFormularios();
                 if (onCreateSuccess) {
                     onCreateSuccess();
@@ -36,7 +43,7 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
             })
             .catch(error => {
                 console.error('Error del backend:', error.response?.data?.error || error.message);
-                mostrarToast(error.response?.data?.error || 'Error al crear la base de datos', 'error', 3000);
+                mostrarToast(error.response?.data?.error || 'Error al modificar la base de datos', 'error', 3000);
             });
     }
 
@@ -102,7 +109,7 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
     return (
         <div className='p-4 gap-6 flex flex-col'>
 
-            <h1 class="text-2xl font-bold mb-6 text-center">Crear base de datos</h1>
+            <h1 class="text-2xl font-bold mb-6 text-center">Editar base de datos</h1>
 
             <div>
                 <label className='label'>Nombre de la base de datos</label>
@@ -133,6 +140,7 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
 
             <div className='divider'></div>
 
+
             <div className='flex flex-wrap gap-3 w-full'>
                 <button onClick={() => document.getElementById('Subir_Archivo').showModal()} className='btn h-20 btn-primary text-xl flex-1'> <div className='flex flex-col items-center gap-3'><text>Subir archivo</text>  <FaFileArrowUp size="1.5rem" /></div> </button>
 
@@ -140,7 +148,10 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
             </div>
 
             <div className='flex flex-wrap flex-row w-[100%] gap-3'>
-                <button onClick={() => CrearDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>Crear nueva base de datos</button>
+
+                <button onClick={() => ModificarDB(Nombre, Resumen, Contexto, SQLinicial, dbId)} className='btn flex-3 btn-primary'>Modificar base de datos</button>
+
+
                 <button onClick={() => { LimpiarFormularios(); }} className='btn flex-1 btn-error'>Limpiar formulario</button>
             </div>
 
@@ -255,4 +266,4 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
     )
 }
 
-export default FormularioCrearDB
+export default FormularioEditarEjercicio

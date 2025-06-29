@@ -15,6 +15,8 @@ import { FaPlus } from "react-icons/fa";
 import FormularioEditarDB from './FormularioEditarDB';
 const CrearDB = () => {
 
+    const { mostrarToast } = useToast();
+
     // Variables formulario
 
     // --------- Filtros ---------
@@ -93,7 +95,20 @@ const CrearDB = () => {
 
     // Manejar la edición de una base de datos
     const handleEditarDB = (id) => {
-        setDbIdAEditar(id);
+
+        apiClient.get('/basedatos/ObtenerDB/' + id)
+            .then(response => {
+                console.log('Base de datos elegida:', response.data.db);
+                SetNombre(response.data.db.nombre);
+                SetResumen(response.data.db.resumen);
+                SetContexto(response.data.db.descripcion);
+                SetSQLinicial(response.data.db.sql_init);
+                SetNombreArchivo('SQL guardado');
+                setDbIdAEditar(id);
+            })
+
+            .catch(error => { console.error('Error al obtener usuarios:', error); });
+
         document.getElementById('Editar_db').showModal();
     };
 
@@ -148,6 +163,7 @@ const CrearDB = () => {
                 </div>
 
                 <div className='MostrarDB p-3'>
+                    <div className='p-3 text-xl divider'>Bases de datos creadas</div>
                     {cargando ? (
                         <div className="flex justify-center p-10">
                             <span className="loading loading-spinner loading-lg text-primary"></span>
