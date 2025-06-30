@@ -33,7 +33,11 @@ const CrearEjercicio = () => {
         SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio,
         ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios,
         TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
-        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio, ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio } = useContext(EstadoGlobalContexto)
+        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio, ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio,
+        MODOEDITAR, SetMODOEDITAR, SetterMODOEDITAR,
+
+
+    } = useContext(EstadoGlobalContexto)
 
     const { Solucion, SetSolucion, SetterSolucion } = useContext(EstadoGlobalContexto)
 
@@ -114,9 +118,16 @@ const CrearEjercicio = () => {
     };
 
     useEffect(() => {
-        if (SolucionEjercicio != '') {
+        if (MODOEDITAR == 'Crear') {
             document.getElementById('Crear_db').showModal()
-        }
+            SetMODOEDITAR('') // Resetear modo editar
+        };
+
+        if (MODOEDITAR == 'Editar') {
+            document.getElementById('Editar_db').showModal()
+            SetMODOEDITAR('') // Resetear modo editar
+        };
+
 
         CargarEjercicios();
         cargarBasesDatos();

@@ -1,12 +1,13 @@
 
 CREATE TABLE Usuarios (
     ID SERIAL PRIMARY KEY,
-    nombre TEXT,
+    nombre TEXT UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     rol VARCHAR(50) DEFAULT 'usuario',
     Fecha_Registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE BaseDatos (
     ID SERIAL PRIMARY KEY,
@@ -44,6 +45,20 @@ CREATE TABLE Ejercicios (
         REFERENCES BaseDatos(ID)
         ON DELETE CASCADE
 );
+
+CREATE TABLE Estrellas(
+    ID SERIAL PRIMARY KEY,
+    ID_Usuario INT NOT NULL,
+    ID_Ejercicio INT NOT NULL,
+    Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Usuario)
+        REFERENCES Usuarios(ID)
+        ON DELETE CASCADE,
+    FOREIGN KEY (ID_Ejercicio)
+        REFERENCES Ejercicios(ID)
+        ON DELETE CASCADE
+);
+
 
 CREATE TABLE EjecucionesSQL (
     ID SERIAL PRIMARY KEY,

@@ -78,8 +78,8 @@ const Registro = () => {
 
                         <h2 className='card-title'>Crea tu cuenta</h2>
 
-                        <label>Ingresa tu nombre</label>
-                        <input onChange={SetterNombre} className='input w-full' placeholder='Nombre' type="text" />
+                        <label>Crea tu nombre de usuario</label>
+                        <input onChange={SetterNombre} className='input w-full' placeholder='Usuario' type="text" />
 
 
                         <label>Ingresa tu correo</label>
@@ -100,7 +100,6 @@ const Registro = () => {
 
                         <button onClick={() => IrLogin()} className="btn btn-secondary">iniciar secion</button>
 
-                        <button className="btn btn-secondary">Ingresar como invitado    </button>
 
 
                     </div>

@@ -196,14 +196,14 @@ const CrearSolucion = ({ }) => {
 
             <div className='ContenidoC p-4 rounded-lg shadow bg-base-200'>
                 <div className="tabs tabs-lift h-full overflow-scroll">
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Problema" />
+                    <input defaultChecked type="radio" name="my_tabs_3" className="tab" aria-label="Problema" />
                     <div className="tab-content bg-base-100 border-base-300 p-6">{ProblemaEjercicio}</div>
 
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Resumen" defaultChecked />
+                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Resumen" />
                     <div className="tab-content bg-base-100 border-base-300 p-6">{ResumenEjercicio}</div>
 
                     <input type="radio" name="my_tabs_3" className="tab" aria-label="Contexto DB" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">Tab content 3</div>
+                    <div className="tab-content bg-base-100 border-base-300 p-6">{DatosDB.descripcion}</div>
                 </div>
             </div>
 

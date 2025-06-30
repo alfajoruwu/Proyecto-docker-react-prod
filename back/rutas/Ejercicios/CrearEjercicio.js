@@ -112,6 +112,52 @@ router.post('/CrearEjercicio', authMiddleware, Verifica("usuario"), async (req, 
     }
 });
 
+router.post('/DarEstrella', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { ejercicioId } = req.body;
+
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+    console.log("Dando estrella al ejercicio con ID:", ejercicioId);
+
+    if (!ejercicioId) {
+        return res.status(400).json({ error: 'ID de ejercicio no proporcionado' });
+    }
+
+    try {
+        // Verificar que el ejercicio exista
+        const ejercicioCheck = await pool.query(
+            'SELECT ID FROM Ejercicios WHERE ID = $1',
+            [ejercicioId]
+        );
+
+        if (ejercicioCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Ejercicio no encontrado' });
+        }
+
+        // Verificar si el usuario ya dio una estrella
+        const estrellaCheck = await pool.query(
+            'SELECT ID FROM Estrellas WHERE ID_Ejercicio = $1 AND ID_Usuario = $2',
+            [ejercicioId, req.user.id]
+        );
+
+        if (estrellaCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Ya has dado una estrella a este ejercicio' });
+        }
+
+        // Insertar la estrella
+        await pool.query(
+            'INSERT INTO Estrellas (ID_Ejercicio, ID_Usuario) VALUES ($1, $2)',
+            [ejercicioId, req.user.id]
+        );
+
+        res.json({
+            message: 'Estrella dada correctamente'
+        });
+    } catch (err) {
+        console.error(`❌ Error dando estrella:`, err.message);
+        return res.status(500).json({ error: 'Error al dar la estrella', details: err.message });
+    }
+});
 
 router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req, res) => {
     const { dbId } = req.query;
@@ -146,13 +192,50 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
         } else {
 
             // Obtener todos los ejercicios del usuario
+            // Junto a las estrellas del ejercicio
+            // ademas de si el usuario actual le dio una estrella
             query = `
-                SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, 
-                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
+                SELECT 
+                    e.ID,
+                    e.Nombre_Ej,
+                    e.Problema,
+                    e.Descripcion,
+                    e.ID_BaseDatos,
+                    e.Dificultad,
+                    e.Fecha_Creacion,
+                    b.Descripcion AS Contexto_DB,
+                    b.Nombre AS Nombre_BaseDatos,
+                    e.PermitirIA,
+                    e.PermitirSolucion,
+                    e.Topicos,
+
+                    -- Autor
+                    u.nombre AS Nombre_Autor,
+
+                    -- Total de estrellas que tiene el ejercicio
+                    COUNT(DISTINCT es.ID) AS Total_Estrellas,
+
+                    -- Si el usuario actual le dio estrella
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM Estrellas es2
+                        WHERE es2.ID_Ejercicio = e.ID AND es2.ID_Usuario = $1
+                    ) THEN TRUE ELSE FALSE END AS Usuario_Dio_Estrella
+
                 FROM Ejercicios e
+
                 JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
+                JOIN Usuarios u ON e.ID_Usuario = u.ID
+
+                LEFT JOIN Estrellas es ON es.ID_Ejercicio = e.ID
+
                 WHERE e.ID_Usuario = $1
-                ORDER BY e.Fecha_Creacion DESC
+
+                GROUP BY 
+                    e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, e.Dificultad,
+                    e.Fecha_Creacion, b.Descripcion, b.Nombre, e.PermitirIA, e.PermitirSolucion, e.Topicos,
+                    u.nombre
+                ORDER BY e.Fecha_Creacion DESC;
+
             `;
             params = [req.user.id];
         }
@@ -168,6 +251,61 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
     } catch (err) {
         console.error(`❌ Error obteniendo ejercicios:`, err.message);
         return res.status(500).json({ error: 'Error al obtener los ejercicios' });
+    }
+});
+
+
+router.get('/ObtenerEjercicio_Usuario/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const ejercicioId = req.params.id;
+
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+    console.log("Obteniendo ejercicio con ID:", ejercicioId);
+
+    try {
+        // Obtener el ejercicio con detalles de la base de datos
+        const query = `
+            SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos,e.Dificultad, e.tabla_solucion,
+                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
+            FROM Ejercicios e
+            JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
+            WHERE e.ID = $1 AND (e.ID_Usuario = $2 OR b.ID_Usuario = $2)
+        `;
+
+        const result = await pool.query(query, [ejercicioId, req.user.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Ejercicio no encontrado o sin acceso' });
+        }
+
+        const ejercicio = result.rows[0];
+
+        // Obtener estadísticas de intentos (opcional)
+        const estadisticas = await pool.query(`
+            SELECT 
+                COUNT(*) AS total_intentos,
+                SUM(CASE WHEN Es_Correcto = true THEN 1 ELSE 0 END) AS intentos_correctos
+            FROM Intentos
+            WHERE ID_Ejercicio = $1 AND ID_Usuario = $2
+        `, [ejercicioId, req.user.id]);
+
+
+
+        console.log("Tabla de solucion del ejercicio: ", ejercicio.tabla_solucion);
+
+        const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
+        const TablasString = JSON.parse(arrayText);
+        const ResultadoTablasString = TablasString.map(s => JSON.parse(s));
+        console.log("Resultado de las tablas: ", ResultadoTablasString);
+        res.json({
+            message: 'Ejercicio obtenido correctamente',
+            ejercicio: ejercicio,
+            estadisticas: estadisticas.rows[0],
+            Tablas: ResultadoTablasString,
+        });
+    } catch (err) {
+        console.error(`❌ Error obteniendo ejercicio:`, err.message);
+        return res.status(500).json({ error: 'Error al obtener el ejercicio', details: err.message });
     }
 });
 

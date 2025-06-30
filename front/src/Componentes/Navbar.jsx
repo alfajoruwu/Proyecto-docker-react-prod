@@ -69,10 +69,7 @@ const Navbar = ({ MenuLateral = true }) => {
 
                                     <div class="divider"></div>
 
-                                    {Nombre != '' &&
-                                        <li><a>Mi perfil</a></li>
 
-                                    }
                                     <li><a onClick={() => IrEjercicios()}>Resolver ejercicios</a></li>
 
                                     {Nombre != '' &&
@@ -110,16 +107,16 @@ const Navbar = ({ MenuLateral = true }) => {
                 </div>
 
                 {Nombre != '' &&
-                    <div class="dropdown dropdown-end">
+                    <div class="dropdown text-neutral-content dropdown-end">
                         {Nombre}
                         <div tabindex="0" role="button" class="btn btn-ghost btn-circle ">
-                            <div class=" rounded-full">
+                            <div class="text-neutral-content rounded-full">
                                 <FaUserAlt />
                             </div>
                         </div>
                         <ul
                             tabindex="0"
-                            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+                            class="menu menu-sm text-black dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                             <li onClick={() => Irlogin()}><a>Cerrar secion</a></li>
                         </ul>
                     </div>

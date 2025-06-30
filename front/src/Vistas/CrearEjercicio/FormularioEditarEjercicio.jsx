@@ -20,6 +20,7 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios, CargandoEDITA
         VerRespuestaEsperada, SetVerRespuestaEsperada, SetterVerRespuestaEsperada,
         IDDBSeleccionadaEjercicio, IDSetDBSeleccionadaEjercicio, IDSetterDBSeleccionadaEjercicio, topicosSeleccionados, setTopicosSeleccionados,
         SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio, TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
+        MODOEDITAR, SetMODOEDITAR, SetterMODOEDITAR,
         ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios, ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio } = useContext(EstadoGlobalContexto)
 
     const LimpiarFormularios = () => {
@@ -32,6 +33,7 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios, CargandoEDITA
             mostrarToast('Debes seleccionar una base de datos antes de crear una solucion', 'error')
             return;
         }
+        SetMODOEDITAR('Editar');
         Navigate('/CrearSolucion')
     }
 

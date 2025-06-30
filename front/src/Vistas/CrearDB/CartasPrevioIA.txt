@@ -1,0 +1,142 @@
+
+Ejercicios disponibles
+
+<div key={ej.id} className="card w-80 max-h-[30rem] overflow-auto bg-base-100 card-md shadow-xl">
+                    <div>
+                        <div className='bg-neutral p-3 text-base-100 rounded-xl'>
+                            <h2 className="card-title">{ej.nombre_ej || 'Sin nombre'}</h2>
+                        </div>
+                        <div className='card-body'>
+                            <p><b>Resumen:</b> {ej.descripcion || 'Sin resumen'}</p>
+                            <p><b>Autor:</b> {ej.autor || 'Sin autor'}</p>
+                            <p><b>Dificultad:</b> {ej.descripcion || 'Sin resumen'}</p>
+                            <p><b>N° de veces completado:</b> {'3' || 'Sin resumen'}</p>
+                            <p><b>Estrellas:</b> {'3' || 'Sin resumen'}</p>
+
+                            <p><b>Fecha creación:</b> {formatFecha(ej.fecha_creacion)}</p>
+
+
+                            <div className='divider'>Topicos</div>
+                            <div className="flex flex-wrap gap-2">
+                                {ej.topicos.map((topico, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-primary text-primary-content p-2  rounded-lg"
+                                    >
+                                        {topico}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="divider"></div>
+
+                            <div className="card-actions flex">
+                                <button className="btn btn-primary flex-3" onClick={() => ResolverEjercicio(ej)}>
+                                    Resolver ejercicio
+                                </button>
+
+                                <button className='btn btn-secondary flex-1' onClick={() => console.log('LIKE')}>
+                                    <FaStar />
+                                </button>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+
+
+Bases de datos
+
+ <div key={ej.id} className="card w-80 max-h-[30rem] overflow-auto bg-base-100 card-md shadow-xl">
+                    <div>
+                        <div className='bg-neutral p-3 text-base-100 rounded-xl'>
+                            <h2 className="card-title">{ej.nombre_ej || 'Sin nombre'}</h2>
+                        </div>
+                        <div className='card-body'>
+                            <p><b>Resumen:</b> {ej.descripcion || 'Sin resumen'}</p>
+                            <p><b>Fecha creación:</b> {formatFecha(ej.fecha_creacion)}</p>
+
+                            <div className='divider'>Topicos</div>
+                            <div className="flex flex-wrap gap-2 p-2">
+                                {ej.topicos.map((topico, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-primary text-primary-content p-2  rounded-lg"
+                                    >
+                                        {topico}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="divider"> Opciones</div>
+
+
+
+                            <div className="card-actions">
+
+                                <button className="btn btn-primary" onClick={() => onEditarDB(ej.id)}>
+                                    Editar
+                                </button>
+
+
+                                <button className="btn btn-error" onClick={() => {
+                                    if (window.confirm(`¿Estás seguro de que quieres borrar el ejercicio "${ej.nombre_ej}"?`)) {
+                                        onBorrarDB(ej.id);
+                                    }
+                                }}>
+                                    Borrar
+                                </button>
+
+
+                                <button onClick={() => VerDetalles(ej)} className='btn btn-secondary'>
+                                    Detalles
+                                </button>
+
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+
+    
+Crear DB
+
+   <div key={db.id} className="card w-80 bg-base-100 card-md shadow-xl">
+                    <div>
+                        <div className='bg-neutral p-3 text-base-100 rounded-xl'>
+                            <h2 className="card-title">{db.nombre || 'Sin nombre'}</h2>
+                        </div>
+                        <div className='card-body'>
+                            <p><b>Resumen:</b> {db.resumen || 'Sin resumen'}</p>
+                            <p><b>Fecha creación:</b> {formatFecha(db.fecha_creacion)}</p>
+
+                            <div className="divider"></div>
+
+                            <div className="card-actions">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => onEditarDB(db.id)}
+                                >
+                                    Editar
+                                </button>
+                                <button
+                                    className="btn btn-error"
+                                    onClick={() => {
+                                        if (window.confirm(`¿Estás seguro de que quieres borrar la base de datos "${db.nombre}"?`)) {
+                                            onBorrarDB(db.id);
+                                        }
+                                    }}
+                                >
+                                    Borrar
+                                </button>
+                                <button className="btn btn-ghost">
+                                    Ejercicios: {db.ejercicios_count || 0}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>

@@ -11,8 +11,20 @@ import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode } from 'react-icon
 import './PopUpDatos.css'
 
 
-const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB }) => {
+const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
     const { mostrarToast } = useToast();
+
+    const Navigate = useNavigate();
+
+    const { IdEjercicioResolver, SetIdEjercicioResolver, SetterIdEjercicioResolver } = useContext(EstadoGlobalContexto)
+
+    const IrResolverEjercicio = () => {
+        if (IdEjercicioResolver == 'placeholder' || IdEjercicioResolver == '') {
+            mostrarToast('Debes seleccionar un ejercicio antes de resolverlo', 'error')
+            return;
+        }
+        Navigate('/RealizarEjercicio')
+    }
 
     // Formatear fecha para mostrar
     const formatFecha = (fechaStr) => {
@@ -61,6 +73,9 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB
     }
 
     const ResolverEjercicio = (ej) => {
+        // Setea el ID del ejercicio a resolver
+        SetIdEjercicioResolver(ej.id || 'placeholder');
+        console.log('Ejercicio a resolver:', ej.id || 'placeholder');
         document.getElementById("Resolver-Ejercicios").showModal()
         SetNombreEjercicio(ej.nombre_ej || '')
         SetProblemaEjercicio(ej.problema || '')
@@ -83,7 +98,12 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB
                     <div className="bg-neutral  p-3 rounded-t-xl">
                         <h2 className="card-title text-base-100">
                             {ej.nombre_ej || 'Sin nombre'}
-                            <div className="badge badge-accent ml-2">{ej.dificultad || 'Facil'}</div>
+                            <div className="badge badge-accent ml-2">{{
+                                1: 'Fácil',
+                                2: 'Intermedio',
+                                3: 'Difícil'
+                            }[ej.dificultad] || 'Desconocido'}
+                            </div>
                         </h2>
                     </div>
 
@@ -121,7 +141,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB
                                 <FaUser className="text-info mr-2" />
                                 <div>
                                     <p className="text-sm text-gray-500">Autor</p>
-                                    <p className="font-semibold">{ej.autor || 'Anónimo'}</p>
+                                    <p className="font-semibold">{ej.nombre_autor || 'Anónimo'}</p>
                                 </div>
                             </div>
                         </div>
@@ -186,8 +206,9 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB
 
                         <div className='elementoD card  shadow-xl bg-base-100'>
                             <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Intentar Resolver</h2>
-
-
+                            <div className='flex p-3'>
+                                <button onClick={() => IrResolverEjercicio()} className='btn btn-primary flex-1'>Resolver ejercicio!</button>
+                            </div>
                         </div>
                     </div>
 
