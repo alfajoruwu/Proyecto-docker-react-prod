@@ -48,6 +48,62 @@ router.post('/RealizarIntento', authMiddleware, Verifica("usuario"), async (req,
     }
 });
 
+
+// Revisar respuesta de un ejercicio
+router.post('/RevisarRespuesta', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { ejercicioId, sqlIntento, Tabla_Usuario } = req.body;
+    if (!ejercicioId || !sqlIntento || !Tabla_Usuario) {
+        return res.status(400).json({ error: 'Faltan datos obligatorios' });
+    }
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+    try {
+        // Obtener la solución del ejercicio
+        const ejercicioQuery = await pool.query(
+            'SELECT tabla_solucion FROM Ejercicios WHERE ID = $1',
+            [ejercicioId]
+        );
+        if (ejercicioQuery.rows.length === 0) {
+            return res.status(404).json({ error: 'Ejercicio no encontrado' });
+        }
+
+        const ejercicio = ejercicioQuery.rows[0];
+        console.log(ejercicio)
+        const solucionSQL = ejercicio.Solucion_SQL;
+        const tablaSolucion = ejercicio.Tabla_Solucion;
+
+        console.log("Tabla del usuario:", Tabla_Usuario);
+
+        const arrayText = `[${ejercicioQuery.rows[0].tabla_solucion.slice(1, -1)}]`;
+        const TablasString = JSON.parse(arrayText);
+        const ResultadoTablasString = TablasString.map(s => JSON.parse(s));
+        console.log("Resultado de las tablas:", ResultadoTablasString);
+
+
+        // Comparar la Tabla_Solucion de solución con el intento del usuario
+        const esCorrecto = JSON.stringify(ResultadoTablasString) === JSON.stringify(Tabla_Usuario);
+        // Registrar el intento
+
+        console.log("Respuesta" + esCorrecto)
+        const result = await pool.query(
+            'INSERT INTO Intentos (ID_Usuario, ID_Ejercicio, Tipo, SQL_Intento, Es_Correcto, Tabla_Solucion) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID',
+            [req.user.id, ejercicioId, 'RevisarRespuesta', sqlIntento, esCorrecto, JSON.stringify(Tabla_Usuario)]
+        );
+        res.json({
+            message: 'Respuesta revisada correctamente',
+            intentoId: result.rows[0].id,
+            esCorrecto: esCorrecto,
+            solucionSQL: solucionSQL,
+            tablaSolucion: tablaSolucion,
+            tablaUsuario: Tabla_Usuario
+        });
+
+    } catch (err) {
+        console.error(`❌ Error revisando respuesta:`, err.message);
+        return res.status(500).json({ error: 'Error al revisar la respuesta' });
+    }
+});
+
 // Registrar ejecución SQL 
 router.post('/EjecucionSQL', authMiddleware, Verifica("usuario"), async (req, res) => {
     const { dbId, sqlQuery, ejercicioId } = req.body;

@@ -89,12 +89,20 @@ const RealizarEjercicio = ({ }) => {
             mostrarToast('Por favor, ejecute una consulta SQL para obtener resultados.', 'error', 3000);
             return;
         }
+        apiClient.post('/ejericicios/RevisarRespuesta', {
+            ejercicioId: IdEjercicioResolver,
+            sqlIntento: SQLEjecutar,
+            Tabla_Usuario: TablasSQLResultado
+        })
+            .then(response => {
+                console.log('Respuesta de la API:', response);
+                mostrarToast(response.data.message, 'success', 3000);
+            })
+            .catch(error => {
+                console.error('Error del backend:', error.response.data.error);
+                mostrarToast('Error: ' + error.response.data.error, 'error', 3000);
+            });
 
-        SetSolucionEjercicio(SQLEjecutar);
-        SetTablaSolucionEjercicio(TablasSQLResultado);
-
-
-        IrCrearEjercicio();
     }
 
 
@@ -338,8 +346,8 @@ const RealizarEjercicio = ({ }) => {
                 <div className='flex flex-row justify-between p-3 gap-3'>
                     <label className='label'> Resultado ejecucion </label>
                     <div className='flex flex-row gap-3'>
-                        <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error  '> Cancelar</button>
-                        <button onClick={() => CrearRespuesta()} className='btn btn-primary'> Guardar respuesta</button>
+                        <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error  '> Salir</button>
+                        <button onClick={() => CrearRespuesta()} className='btn btn-primary'> Comprobar respuesta</button>
                     </div>
                 </div>
                 <CustomTable itemsPerPage={4} data={TablasSQLResultado} />

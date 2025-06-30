@@ -518,7 +518,7 @@ router.post('/EvaluarRespuesta', authMiddleware, Verifica("usuario"), async (req
         try {
             const resultadoRespuesta = await dbPool.query({
                 text: respuestaSQL,
-                timeout: 5000  // 5 segundos de timeout
+                timeout: 15000  // 5 segundos de timeout
             });
 
             // Comparar resultados

@@ -83,7 +83,8 @@ CREATE TABLE Intentos (
     Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     SQL_Intento TEXT NOT NULL,
     Es_Correcto BOOLEAN,
-    Resultado_CSV TEXT,
+    Tabla_Solucion TEXT,
+
     FOREIGN KEY (ID_Usuario)
         REFERENCES Usuarios(ID)
         ON DELETE CASCADE,
