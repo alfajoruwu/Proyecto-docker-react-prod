@@ -128,6 +128,18 @@ const RealizarEjercicio = ({ }) => {
         SetTablaInicial(event.target.value)
     }
 
+
+    const [RespuestaIA, SetRespuestaIA] = useState('')
+    const SetterRespuestaIA = (event) => {
+        SetRespuestaIA(event.target.value)
+    }
+
+
+    const [CargandoRespuestaIA, SetCargandoRespuestaIA] = useState('')
+    const SetterCargandoRespuestaIA = (event) => {
+        SetCargandoRespuestaIA(event.target.value)
+    }
+
     const ObtenerDatosEjercicio = () => {
         // Obtener los datos del ejercicio seleccionado
         console.log('ID del ejercicio a resolver:', IdEjercicioResolver);
@@ -188,6 +200,42 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast('Error al cargar el ejercicio', 'error', 3000);
             });
 
+    }
+
+
+
+    const EnviarMensajeIA = () => {
+        SetCargandoRespuestaIA(true);
+
+        apiClient.post('/IA/PromptA', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
+            .then(response => {
+                console.log('Respuesta ia:', response.data);
+                SetRespuestaIA(response.data.respuesta);
+                SetCargandoRespuestaIA(false);
+                mostrarToast(response.data.message, 'success', 3000);
+            })
+            .catch(error => {
+                console.error('Error del backend:', error.response.data.error);
+                SetCargandoRespuestaIA(false);
+                mostrarToast(error.response.data.error, 'error', 3000);
+            });
+    }
+
+    const EnviarMensajeIA2 = () => {
+        SetCargandoRespuestaIA(true);
+
+        apiClient.post('/IA/PromptB', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
+            .then(response => {
+                console.log('Respuesta ia:', response.data);
+                SetRespuestaIA(response.data.respuesta);
+                SetCargandoRespuestaIA(false);
+                mostrarToast(response.data.message, 'success', 3000);
+            })
+            .catch(error => {
+                console.error('Error del backend:', error.response.data.error);
+                SetCargandoRespuestaIA(false);
+                mostrarToast(error.response.data.error, 'error', 3000);
+            });
     }
 
 
@@ -262,13 +310,24 @@ const RealizarEjercicio = ({ }) => {
                         <div className="flex flex-col h-full gap-3">
                             {/* Botones - apilados en móvil */}
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <button className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
-                                <button className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
+                                <button onClick={() => EnviarMensajeIA()} className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
+                                <button onClick={() => EnviarMensajeIA2()} className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
                             </div>
 
                             {/* Área de texto con scroll controlado */}
                             <div className="flex-1 min-h-0 overflow-y-auto bg-base-200 shadow-lg p-4 rounded-lg">
-                                HOLA PUTO
+
+                                {CargandoRespuestaIA && <span className="loading loading-spinner loading-md"></span>}
+                                {
+                                    <div className='whitespace-pre'>
+                                        {RespuestaIA}
+                                    </div>
+
+                                }
+                                {
+                                    RespuestaIA === '' && !CargandoRespuestaIA && <p className="text-gray-500">respuesta de IA...</p>
+                                }
+
                             </div>
                         </div>
                     </div>

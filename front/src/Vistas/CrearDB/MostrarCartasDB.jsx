@@ -39,14 +39,14 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
                                 <FaRegFileAlt className="text-lg" />
                                 <div>
                                     <p className="text-sm text-gray-500">Resumen</p>
-                                    <p className="font-medium">{db.resumen || 'Sin descripción'}</p>
+                                    <p className="font-medium text-gray-500">{db.resumen || 'Sin descripción'}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                                 <FaRegCalendarCheck className="text-lg" />
                                 <div>
                                     <p className="text-sm text-gray-500">Creación</p>
-                                    <p className="font-medium">{formatFecha(db.fecha_creacion)}</p>
+                                    <p className="font-medium text-gray-500">{formatFecha(db.fecha_creacion)}</p>
                                 </div>
                             </div>
                         </div>

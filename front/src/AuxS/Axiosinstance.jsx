@@ -3,7 +3,7 @@ import axios from 'axios';
 // Nota: Cambiar tambien el refresh
 const apiClient = axios.create({
     baseURL: 'http://localhost:3000', // https://www.sqlfacilito.cl/api
-    timeout: 5000,
+    timeout: 35000,
     headers: {
         'Content-Type': 'application/json',
 

@@ -24,6 +24,8 @@ const baseDatosUsar = require('./rutas/BaseDatos/UsarBaseDatos');
 const CrearEjercicio = require('./rutas/Ejercicios/CrearEjercicio');
 const Resultados = require('./rutas/Ejercicios/RegistrarInformacion');
 
+// IA
+const IA = require('./rutas/IA/IA');
 
 
 app.use('/usuarios', usuarios);
@@ -34,6 +36,7 @@ app.use('/basedatos', baseDatosUsar);
 app.use('/ejericicios', CrearEjercicio);
 app.use('/ejericicios', Resultados);
 
+app.use('/IA', IA);
 
 //app.use('/ejemplos', ejemplos);
 //app.use('/ejemplos-protegida', ejemploProtegida);
