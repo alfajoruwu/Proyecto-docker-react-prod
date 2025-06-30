@@ -4,14 +4,14 @@ import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
-import { FaRegCalendarAlt, FaTags, FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
-import { formatearFecha } from '../../AuxS/Utilidades';
 
+import { formatearFecha } from '../../AuxS/Utilidades';
+import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode } from 'react-icons/fa';
 
 import './PopUpDatos.css'
 
 
-const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => {
+const MostrarCartasEjercicio = ({ ListaEjercicios, resolverEjercicio, onBorrarDB }) => {
     const { mostrarToast } = useToast();
 
     // Formatear fecha para mostrar
@@ -60,8 +60,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
         SetTopicosEjerccio(event.target.value)
     }
 
-    const VerDetalles = (ej) => {
-        document.getElementById("Detalles_ejercicios").showModal()
+    const ResolverEjercicio = (ej) => {
+        document.getElementById("Resolver-Ejercicios").showModal()
         SetNombreEjercicio(ej.nombre_ej || '')
         SetProblemaEjercicio(ej.problema || '')
         SetContextoDB(ej.contexto_db || '')
@@ -69,6 +69,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
         SetPermiteIA(ej.permitiria || false)
         SetPermiteRespuesta(ej.permitirsolucion || false);
         SetTopicosEjerccio(ej.topicos || '')
+
     }
 
 
@@ -77,75 +78,65 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaEjercicios && ListaEjercicios.length > 0 ? ListaEjercicios.map((ej) => (
-                <div key={ej.id} className="card card-compact w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-                    {/* Header con efecto de degradado */}
-                    <div className="bg-neutral p-4 rounded-t-xl">
-                        <h2 className="card-title text-base-100 flex items-center gap-2">
+                <div key={ej.id} className="card card-compact w-full md:w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                    {/* Header con gradiente */}
+                    <div className="bg-neutral  p-3 rounded-t-xl">
+                        <h2 className="card-title text-base-100">
                             {ej.nombre_ej || 'Sin nombre'}
-
+                            <div className="badge badge-accent ml-2">{ej.dificultad || 'Facil'}</div>
                         </h2>
                     </div>
 
-                    {/* Contenido principal */}
-                    <div className="card-body overflow-y-auto max-h-64 p-4 space-y-4">
-                        {/* Información básica */}
-                        <div className="space-y-2">
-                            <p className="text-gray-700 mb-3">
-                                <span className="text-gray-700 mb-3">Resumen:</span> {ej.descripcion || 'Sin descripción'}
-                            </p>
-                            <p className="flex items-center gap-2 text-sm text-gray-500">
-                                <FaRegCalendarAlt />
-                                Creado el: {formatFecha(ej.fecha_creacion)}
-                            </p>
+                    {/* Contenido con scroll suave */}
+                    <div className="card-body overflow-y-auto max-h-64 p-4">
+                        <div className="flex justify-between text-sm text-gray-500 mb-2">
+                            <p><FaRegCalendar className="inline mr-1" /> {formatFecha(ej.fecha_creacion)}</p>
+                            <div className="flex items-center">
+                                <FaStar className="text-yellow-500 mr-1" /> {ej.estrellas || 0}
+                            </div>
                         </div>
 
-                        {/* Topicos con diseño moderno */}
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <FaTags />
-                                Topicos
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {ej.topicos.map((topico, index) => (
-                                    <div key={index}
-                                        className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200">
-                                        {topico}
-                                    </div>
-                                ))}
+                        <p className="text-gray-700 mb-3"><b>Descripción:</b> {ej.descripcion || 'Sin descripción'}</p>
+
+                        {/* Topicos con animación */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {ej.topicos.map((topico, index) => (
+                                <div key={index}
+                                    className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200">
+                                    {topico}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Estadísticas con iconos */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="flex items-center">
+                                <FaCheckCircle className="text-success mr-2" />
+                                <div>
+                                    <p className="text-sm text-gray-500">Completados</p>
+                                    <p className="font-semibold">{ej.veces_completado || 0}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center">
+                                <FaUser className="text-info mr-2" />
+                                <div>
+                                    <p className="text-sm text-gray-500">Autor</p>
+                                    <p className="font-semibold">{ej.autor || 'Anónimo'}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Zona de acciones con diseño moderno */}
-                    <div className="card-actions p-4 border-t border-gray-200 flex flex-col md:flex-row gap-3">
-                        {/* Botón principal */}
-                        <button
-                            className="btn btn-primary btn-wide flex-1 md:flex-none"
-                            onClick={() => VerDetalles(ej)}
-                        >
-                            <FaEye className="mr-2" /> Ver detalles
+                    {/* Footer con botones modernos */}
+                    <div className="card-actions p-4 border-t border-gray-200">
+                        <button className="btn btn-primary btn-wide flex items-center gap-2"
+                            onClick={() => ResolverEjercicio(ej)}>
+                            <FaCode className="text-lg" /> Resolver
                         </button>
-
-                        {/* Botones secundarios */}
-                        <div className="flex flex-1 gap-3">
-                            <button
-                                className="btn btn-secondary btn-outline flex-1"
-                                onClick={() => onEditarDB(ej.id)}
-                            >
-                                <FaEdit className="mr-2" /> Editar
-                            </button>
-
-                            <button
-                                className="btn btn-error btn-outline flex-1"
-                                onClick={() => {
-                                    if (window.confirm(`¿Eliminar "${ej.nombre_ej}"?`)) {
-                                        onBorrarDB(ej.id);
-                                    }
-                                }}
-                            >
-                                <FaTrashAlt className="mr-2" /> Borrar
-                            </button>
-                        </div>
+                        <button className="btn btn-circle btn-outline btn-secondary ml-auto"
+                            onClick={() => console.log('LIKE')}>
+                            <FaStar className="text-xl" />
+                        </button>
                     </div>
                 </div>
             )) : (
@@ -158,12 +149,11 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
             {/* Pop UP */}
 
 
-            <dialog id="Detalles_ejercicios" className="modal">
+            <dialog id="Resolver-Ejercicios" className="modal">
                 <div className="modal-box  w-[80%] max-w-5xl flex flex-col gap-5">
-                    <h3 className="font-bold text-lg">Detalles del ejercicio:</h3>
-                    <h2 className='text-xl'>{NombreEjercicio}</h2>
-                    <div className='PopUpDatos'>
 
+                    <h2 className='text-xl'>{'Titulo: ' + NombreEjercicio}</h2>
+                    <div className='PopUpDatos'>
                         <div className='elementoA card  shadow-xl bg-base-100'>
                             <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Problema</h2>
                             <div>
@@ -195,21 +185,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                         </div>
 
                         <div className='elementoD card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Estadisticas</h2>
+                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Intentar Resolver</h2>
 
-                            <div className='flex flex-col p-2 gap-3'>
-
-                                <div>
-                                    Dificultad: Facil
-                                </div>
-
-                                <div className=''>
-                                    Estrellas: 100
-                                </div>
-                                <div className=''>
-                                    intentos: 1000
-                                </div>
-                            </div>
 
                         </div>
                     </div>

@@ -49,11 +49,15 @@ function validarSelectSQL(sql) {
 }
 
 router.post('/CrearEjercicio', authMiddleware, Verifica("usuario"), async (req, res) => {
-    const { nombre, problema, descripcion, solucionSQL, dbId, permitirIA, verRespuestaEsperada, topicos, dificultad } = req.body;
+    const { nombre, problema, descripcion, solucionSQL, dbId, permitirIA, verRespuestaEsperada, topicos, dificultad, Tabla_Solucion } = req.body;
+
     console.log("Datos recibidos para crear ejercicio:", req.body);
-    if (!nombre || !problema || !descripcion || !solucionSQL || !dbId || dificultad === undefined) {
-        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+
+    // Todos los parametros son obligatorios
+    if (!nombre || !problema || !descripcion || !solucionSQL || !dbId || permitirIA === undefined || verRespuestaEsperada === undefined || topicos === undefined || dificultad === undefined || dificultad === null) {
+        return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
+
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
@@ -78,8 +82,22 @@ router.post('/CrearEjercicio', authMiddleware, Verifica("usuario"), async (req, 
 
         // Insertar el ejercicio
         const result = await pool.query(
-            'INSERT INTO Ejercicios (Nombre_Ej, ID_Usuario, Problema, Descripcion, SQL_Solucion, ID_BaseDatos) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID',
-            [nombre, req.user.id, problema, descripcion || null, solucionSQL, dbId]
+            `INSERT INTO Ejercicios (ID_Usuario, Nombre_Ej, Problema, Descripcion, SQL_Solucion, ID_BaseDatos, PermitirIA, PermitirSolucion, Topicos, Dificultad, Tabla_Solucion)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                RETURNING ID`,
+            [
+                req.user.id,
+                nombre,
+                problema,
+                descripcion,
+                solucionSQL,
+                dbId,
+                permitirIA,
+                verRespuestaEsperada,
+                topicos,
+                dificultad,
+                Tabla_Solucion,
+            ]
         );
 
         const nuevoEjercicio = result.rows[0];
@@ -90,7 +108,7 @@ router.post('/CrearEjercicio', authMiddleware, Verifica("usuario"), async (req, 
         });
     } catch (err) {
         console.error(`❌ Error creando ejercicio:`, err.message);
-        return res.status(500).json({ error: 'Error al crear el ejercicio' });
+        return res.status(500).json({ error: 'Error al crear el ejercicio', details: "Error creando ejercicio " + err.message });
     }
 });
 
@@ -118,7 +136,7 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
 
             query = `
                 SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, 
-                       e.Fecha_Creacion, b.Nombre AS Nombre_BaseDatos
+                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
                 FROM Ejercicios e
                 JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
                 WHERE e.ID_BaseDatos = $1 AND e.ID_Usuario = $2
@@ -126,10 +144,11 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
             `;
             params = [dbId, req.user.id];
         } else {
+
             // Obtener todos los ejercicios del usuario
             query = `
                 SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, 
-                       e.Fecha_Creacion, b.Nombre AS Nombre_BaseDatos
+                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
                 FROM Ejercicios e
                 JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
                 WHERE e.ID_Usuario = $1
@@ -139,6 +158,8 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
         }
 
         const result = await pool.query(query, params);
+
+
 
         res.json({
             message: 'Ejercicios obtenidos correctamente',
@@ -161,8 +182,8 @@ router.get('/ObtenerEjercicio/:id', authMiddleware, Verifica("usuario"), async (
     try {
         // Obtener el ejercicio con detalles de la base de datos
         const query = `
-            SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.SQL_Solucion, 
-                   e.ID_BaseDatos, e.Fecha_Creacion, b.Nombre AS Nombre_BaseDatos
+            SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos,e.Dificultad, e.SQL_Solucion, e.tabla_solucion,
+                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
             FROM Ejercicios e
             JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
             WHERE e.ID = $1 AND (e.ID_Usuario = $2 OR b.ID_Usuario = $2)
@@ -185,92 +206,91 @@ router.get('/ObtenerEjercicio/:id', authMiddleware, Verifica("usuario"), async (
             WHERE ID_Ejercicio = $1 AND ID_Usuario = $2
         `, [ejercicioId, req.user.id]);
 
-        // Verificar si el usuario creó el ejercicio (para mostrar o no la solución)
-        const esAutor = ejercicio.id_usuario === req.user.id;
 
-        // Si no es autor, no enviar la solución
-        if (!esAutor) {
-            delete ejercicio.sql_solucion;
-        }
 
+        console.log("Tabla de solucion del ejercicio: ", ejercicio.tabla_solucion);
+
+        const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
+        const TablasString = JSON.parse(arrayText);
+        const ResultadoTablasString = TablasString.map(s => JSON.parse(s));
+        console.log("Resultado de las tablas: ", ResultadoTablasString);
         res.json({
             message: 'Ejercicio obtenido correctamente',
             ejercicio: ejercicio,
             estadisticas: estadisticas.rows[0],
-            esAutor: esAutor
+            Tablas: ResultadoTablasString,
         });
     } catch (err) {
         console.error(`❌ Error obteniendo ejercicio:`, err.message);
-        return res.status(500).json({ error: 'Error al obtener el ejercicio' });
+        return res.status(500).json({ error: 'Error al obtener el ejercicio', details: err.message });
     }
 });
 
 
 router.put('/editarEjercicio', authMiddleware, Verifica("usuario"), async (req, res) => {
-    const { ejercicioId, nombre, problema, descripcion, solucionSQL } = req.body;
+    const { id, nombre, problema, descripcion, solucionSQL, dbId, permitirIA, verRespuestaEsperada, topicos, dificultad, Tabla_Solucion } = req.body;
 
-    if (!ejercicioId) {
-        return res.status(400).json({ error: 'ID de ejercicio no proporcionado' });
+    console.log("Datos recibidos para editar ejercicio:", req.body);
+
+    // Todos los parametros son obligatorios
+    if (!id || !nombre || !problema || !descripcion || !solucionSQL || !dbId || permitirIA === undefined || verRespuestaEsperada === undefined || topicos === undefined || dificultad === undefined || dificultad === null) {
+        return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
     console.log("Usuario autenticado:", req.user.id);
     console.log("Rol del usuario:", req.user.rol);
-    console.log("Editando ejercicio con ID:", ejercicioId);
+    console.log("Editando ejercicio con ID:", id);
 
     try {
-        // Verificar que el ejercicio pertenezca al usuario
-        const ejercicioCheck = await pool.query(
-            'SELECT ID FROM Ejercicios WHERE ID = $1 AND ID_Usuario = $2',
-            [ejercicioId, req.user.id]
+        // Verificar que la DB pertenezca al usuario
+        const dbCheck = await pool.query(
+            'SELECT ID FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+            [dbId, req.user.id]
         );
 
-        if (ejercicioCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'No tienes acceso a este ejercicio' });
+        if (dbCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'No tienes acceso a esta base de datos' });
         }
 
-        // Si hay solución SQL, validarla
-        if (solucionSQL) {
-            const validacion = validarSelectSQL(solucionSQL);
-            if (!validacion.isValid) {
-                return res.status(400).json({ error: validacion.error });
-            }
+        // Validar la consulta SQL de solución
+        const validacion = validarSelectSQL(solucionSQL);
+        if (!validacion.isValid) {
+            return res.status(400).json({ error: validacion.error });
         }
 
-        // Construir actualización con COALESCE para campos opcionales
-        const query = `
-            UPDATE Ejercicios
-            SET 
-                Nombre_Ej = COALESCE($1, Nombre_Ej),
-                Problema = COALESCE($2, Problema),
-                Descripcion = COALESCE($3, Descripcion),
-                SQL_Solucion = COALESCE($4, SQL_Solucion)
-            WHERE ID = $5 AND ID_Usuario = $6
-            RETURNING ID, Nombre_Ej, Problema, Descripcion, Fecha_Creacion
-        `;
-
+        // Actualizar el ejercicio
         const result = await pool.query(
-            query,
+            `UPDATE Ejercicios 
+                SET Nombre_Ej = $1, Problema = $2, Descripcion = $3, SQL_Solucion = $4, 
+                    ID_BaseDatos = $5, PermitirIA = $6, PermitirSolucion = $7, Topicos = $8, Dificultad = $9, Tabla_Solucion = $10
+                WHERE ID = $11 AND ID_Usuario = $12
+                RETURNING ID`,
             [
-                nombre || null,
-                problema || null,
-                descripcion || null,
-                solucionSQL || null,
-                ejercicioId,
+                nombre,
+                problema,
+                descripcion,
+                solucionSQL,
+                dbId,
+                permitirIA,
+                verRespuestaEsperada,
+                topicos,
+                dificultad,
+                Tabla_Solucion,
+                id,
                 req.user.id
             ]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Ejercicio no encontrado' });
+            return res.status(404).json({ error: 'Ejercicio no encontrado o sin acceso' });
         }
-
         res.json({
-            message: 'Ejercicio actualizado correctamente',
-            ejercicio: result.rows[0]
+            message: 'Ejercicio editado correctamente',
+            ejercicioId: result.rows[0].id
         });
     } catch (err) {
-        console.error(`❌ Error actualizando ejercicio:`, err.message);
-        return res.status(500).json({ error: 'Error al actualizar el ejercicio' });
+        console.error(`❌ Error editando ejercicio:`, err.message);
+        return res.status(500).json({ error: 'Error al editar el ejercicio', details: err.message });
     }
 });
 

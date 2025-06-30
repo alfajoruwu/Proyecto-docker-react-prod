@@ -68,6 +68,11 @@ export const ProveedorEstadoGlobal = ({ children }) => {
     SetListaTopicosEjercicio(event.target.value)
   }
 
+  const [ID_Editar_ejercicio, SetID_Editar_ejercicio] = useState('')
+  const SetterID_Editar_ejercicio = (event) => {
+    SetID_Editar_ejercicio(event.target.value)
+  }
+
   const [topicosSeleccionados, setTopicosSeleccionados] = useState([]);
   return (
     // Variables
@@ -88,7 +93,8 @@ export const ProveedorEstadoGlobal = ({ children }) => {
         SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio,
         ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios,
         TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
-        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio
+        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio,
+        ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio
       }}>
       {children}
     </EstadoGlobalContexto.Provider>

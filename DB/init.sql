@@ -29,6 +29,7 @@ CREATE TABLE Ejercicios (
     Problema TEXT NOT NULL,
     Descripcion TEXT,
     SQL_Solucion TEXT NOT NULL,
+    Tabla_Solucion TEXT,
     ID_BaseDatos INT NOT NULL,
     PermitirIA BOOLEAN,
     PermitirSolucion BOOLEAN,

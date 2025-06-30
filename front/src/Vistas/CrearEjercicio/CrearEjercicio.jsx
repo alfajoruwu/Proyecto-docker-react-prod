@@ -33,7 +33,7 @@ const CrearEjercicio = () => {
         SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio,
         ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios,
         TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
-        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio } = useContext(EstadoGlobalContexto)
+        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio, ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio } = useContext(EstadoGlobalContexto)
 
     const { Solucion, SetSolucion, SetterSolucion } = useContext(EstadoGlobalContexto)
 
@@ -122,8 +122,67 @@ const CrearEjercicio = () => {
         cargarBasesDatos();
     }, []);
 
+    const [CargandoEDITAR, SetCargandoEDITAR] = useState(false)
+    const SetterCargandoEDITAR = (event) => {
+        SetCargandoEDITAR(event.target.value)
+    }
+
+    const BorrarEjercicio = (idEjercico) => {
+        setCargando(true);
+        apiClient.delete('/ejericicios/BorrarEjercicio/' + idEjercico)
+            .then(response => {
+                console.log('Ejercicio eliminado:', response.data);
+                mostrarToast('Ejercicio eliminado correctamente', 'success', 3000);
+                CargarEjercicios(); // Recargar la lista
+            })
+            .catch(error => {
+                console.error('Error al eliminar base de datos:', error);
+                mostrarToast(error.response?.data?.error || 'Error al eliminar la base de datos', 'error', 3000);
+                setCargando(false);
+            });
+    }
+
+    const EditarEjercicio = (id_ejercicio) => {
+        SetID_Editar_ejercicio(id_ejercicio);
+        SetCargandoEDITAR(true)
+        // Setear datos del ejercicio a editar
+        apiClient.get('/ejericicios/ObtenerEjercicio/' + id_ejercicio)
+            .then(response => {
+
+                console.log('ejercicio:', response.data);
+                SetNombreEjercicio(response.data.ejercicio.nombre_ej);
+                SetProblemaEjercicio(response.data.ejercicio.problema);
+                SetResumenEjercicio(response.data.ejercicio.descripcion);
+                SetDificultadEjercicio(response.data.ejercicio.dificultad);
+                SetPermitirIAEjercicio(response.data.ejercicio.permitiria);
+                SetVerRespuestaEsperada(response.data.ejercicio.permitirsolucion);
+                IDSetDBSeleccionadaEjercicio(response.data.ejercicio.id_basedatos);
+                SetSolucionEjercicio(response.data.ejercicio.sql_solucion);
+                console.log("Tabla" + response.data.Tablas)
+                SetTablaSolucionEjercicio(response.data.Tablas);
+                setTopicosSeleccionados(response.data.ejercicio.topicos);
+                SetCargandoEDITAR(false)
+            })
+            .catch(error => { console.error('Error al obtener ejercicio:', error); });
+
+        document.getElementById('Editar_db').showModal();
+
+        console.log("Mostrar formulario")
+        console.log("Nombre del ejercicio: ", NombreEjercicio)
+        console.log("Resumen del ejercicio: ", ResumenEjercicio)
+        console.log("Problema del ejercicio: ", ProblemaEjercicio)
+        console.log("Dificultad del ejercicio: ", DificultadEjercicio)
+        console.log("Permitir IA: ", PermitirIAEjercicio)
+        console.log("Ver respuesta esperada: ", VerRespuestaEsperada)
+        console.log("ID de la base de datos seleccionada: ", IDDBSeleccionadaEjercicio)
+        console.log("Solucion del ejercicio: ", SolucionEjercicio)
+        console.log("Tabla de solucion del ejercicio: ", JSON.parse(TablaSolucionEjercicio))
+        console.log("Topicos seleccionados: ", topicosSeleccionados)
 
 
+        // Establecer el ID del ejercicio a editar
+
+    }
 
     return (
         <div className='CrearEjercicio'>
@@ -168,8 +227,8 @@ const CrearEjercicio = () => {
                     ) : (
                         <MostrarCartasEjercicio
                             ListaEjercicios={EjerciciosDisponibles}
-                        // onEditarDB={handleEditarDB}
-                        // onBorrarDB={handleBorrarDB}
+                            onEditarDB={EditarEjercicio}
+                            onBorrarDB={BorrarEjercicio}
                         />
                     )}
                 </div>
@@ -201,7 +260,13 @@ const CrearEjercicio = () => {
             <dialog id="Editar_db" className="modal">
                 <div className="modal-box w-11/12 max-w-5xl">
                     <FormularioEditarEjercicio
-
+                        listaDB={ListaBasesDatos}
+                        SetterDificultad={SetterDificultad}
+                        Dificultad={Dificultad}
+                        Solucion={Solucion}
+                        ListaEjercicios={EjerciciosDisponibles}
+                        ActualizarEjercicios={CargarEjercicios}
+                        CargandoEDITAR={CargandoEDITAR}
                     />
                 </div>
                 <form method="dialog" className="modal-backdrop">
