@@ -1,11 +1,21 @@
-import React from 'react'
-import { useToast } from '../../Componentes/ToastContext';
+
 import { formatearFecha } from '../../AuxS/Utilidades';
+
+import React, { useContext, useState } from 'react'
+import Navbar from '../../Componentes/Navbar';
+import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
+import { useToast } from '../../Componentes/ToastContext';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../../AuxS/Axiosinstance';
 
 import { FaDatabase, FaRegFileAlt, FaRegCalendarCheck, FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
 
 const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
     const { mostrarToast } = useToast();
+
+    const Navigate = useNavigate();
+
+    const { ProbarDBIDMENU, SetProbarDBIDMENU, SetterProbarDBIDMENU } = useContext(EstadoGlobalContexto)
 
     // Formatear fecha para mostrar
     const formatFecha = (fechaStr) => {
@@ -17,6 +27,8 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
         }
     };
 
+    const IrProbarDB = () => { Navigate('/ProbarDB') }
+
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaBasesDatos && ListaBasesDatos.length > 0 ? ListaBasesDatos.map((db) => (
@@ -25,9 +37,9 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
                     <div className="bg-neutral p-4 rounded-t-xl">
                         <div className="flex justify-between items-center">
                             <h2 className="card-title text-base-100">{db.nombre || 'Sin nombre'}</h2>
-                            <div className="badge badge-accent ">
+                            {/* <div className="badge badge-accent ">
                                 <FaDatabase className="mr-1" /> {db.ejercicios_count || 0} ejercicios
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
@@ -74,6 +86,18 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
                                     }}
                                 >
                                     <FaTrashAlt className="mr-2" /> Borrar
+                                </button>
+
+                                <button
+                                    className="btn btn-accent btn-outline flex-1"
+                                    onClick={() => {
+                                        console.log(`Probar la base de datos: ${db.id}`);
+                                        SetProbarDBIDMENU(db.id);
+                                        IrProbarDB();
+
+                                    }}
+                                >
+                                    <FaEye className="mr-2" /> Probar
                                 </button>
                             </div>
                         </div>

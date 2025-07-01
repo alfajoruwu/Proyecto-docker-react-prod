@@ -84,6 +84,11 @@ export const ProveedorEstadoGlobal = ({ children }) => {
     SetMODOEDITAR(event.target.value)
   }
 
+  const [ProbarDBIDMENU, SetProbarDBIDMENU] = useState('')
+  const SetterProbarDBIDMENU = (event) => {
+    SetProbarDBIDMENU(event.target.value)
+  }
+
   const [topicosSeleccionados, setTopicosSeleccionados] = useState([]);
   return (
     // Variables
@@ -107,7 +112,8 @@ export const ProveedorEstadoGlobal = ({ children }) => {
         ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio,
         ID_Editar_ejercicio, SetID_Editar_ejercicio, SetterID_Editar_ejercicio,
         IdEjercicioResolver, SetIdEjercicioResolver, SetterIdEjercicioResolver,
-        MODOEDITAR, SetMODOEDITAR, SetterMODOEDITAR
+        MODOEDITAR, SetMODOEDITAR, SetterMODOEDITAR,
+        ProbarDBIDMENU, SetProbarDBIDMENU, SetterProbarDBIDMENU
 
       }}>
       {children}
