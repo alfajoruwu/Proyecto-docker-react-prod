@@ -223,4 +223,43 @@ router.get('/EstadisticasUsuario', authMiddleware, Verifica("usuario"), async (r
     }
 });
 
+// Registrar inicio de un ejercicio
+router.post('/IniciarEjercicio', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { ejercicioId } = req.body;
+    if (!ejercicioId) {
+        return res.status(400).json({ error: 'Falta el ID del ejercicio' });
+    }
+
+    try {
+        await pool.query(
+            'INSERT INTO IniciosEjercicio (ID_Usuario, ID_Ejercicio) VALUES ($1, $2)',
+            [req.user.id, ejercicioId]
+        );
+        res.json({ message: 'Inicio de ejercicio registrado' });
+    } catch (err) {
+        console.error(`❌ Error registrando inicio de ejercicio:`, err.message);
+        return res.status(500).json({ error: 'Error al registrar el inicio del ejercicio' });
+    }
+});
+
+// Registrar ejecución de SQL (sin ejecutarla, solo log)
+router.post('/RegistrarEjecucionSQL', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { ejercicioId, sqlQuery, resultado } = req.body;
+    if (!ejercicioId || !sqlQuery) {
+        return res.status(400).json({ error: 'Faltan datos obligatorios' });
+    }
+
+    try {
+        await pool.query(
+            'INSERT INTO EjecucionesSQL (ID_Usuario, ID_Ejercicio, SQL_Ejecucion, Resultado) VALUES ($1, $2, $3, $4)',
+            [req.user.id, ejercicioId, sqlQuery, resultado]
+        );
+        res.json({ message: 'Ejecución SQL registrada' });
+    } catch (err) {
+        console.error(`❌ Error registrando ejecución SQL:`, err.message);
+        return res.status(500).json({ error: 'Error al registrar la ejecución SQL' });
+    }
+});
+
+
 module.exports = router;

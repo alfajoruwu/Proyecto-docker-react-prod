@@ -1,4 +1,3 @@
-
 import React, { useContext, useEffect, useState } from 'react'
 import Navbar from '../../Componentes/Navbar';
 import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
@@ -79,10 +78,14 @@ const RealizarEjercicio = ({ }) => {
                 console.log('SQL Ejecutado:', response);
                 mostrarToast(response.data.message, 'success', 3000);
                 SetTablasSQLResultado(response.data.filas);
+                // Registrar ejecución exitosa
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { ejercicioId: IdEjercicioResolver, sqlQuery: SQLEjecutar, resultado: 'Exitoso' });
             })
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
                 mostrarToast('SQL Error: ' + error.response.data.detalle, 'error', 3000);
+                // Registrar ejecución fallida
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { ejercicioId: IdEjercicioResolver, sqlQuery: SQLEjecutar, resultado: 'Error: ' + error.response.data.detalle });
             });
 
     }
@@ -205,6 +208,12 @@ const RealizarEjercicio = ({ }) => {
     const ObtenerDatosEjercicio = () => {
         // Obtener los datos del ejercicio seleccionado
         console.log('ID del ejercicio a resolver:', IdEjercicioResolver);
+
+        // Registrar inicio de ejercicio
+        apiClient.post('/ejericicios/IniciarEjercicio', { ejercicioId: IdEjercicioResolver })
+            .then(res => console.log(res.data.message))
+            .catch(err => console.error('Error al registrar inicio de ejercicio:', err));
+
 
         let idBaseDatos = '';
 

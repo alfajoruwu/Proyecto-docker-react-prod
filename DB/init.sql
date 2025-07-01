@@ -75,6 +75,19 @@ CREATE TABLE EjecucionesSQL (
         ON DELETE CASCADE
 );
 
+CREATE TABLE IniciosEjercicio (
+    ID SERIAL PRIMARY KEY,
+    ID_Usuario INT NOT NULL,
+    ID_Ejercicio INT NOT NULL,
+    Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Usuario)
+        REFERENCES Usuarios(ID)
+        ON DELETE CASCADE,
+    FOREIGN KEY (ID_Ejercicio)
+        REFERENCES Ejercicios(ID)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE Intentos (
     ID SERIAL PRIMARY KEY,
     ID_Usuario INT NOT NULL,
