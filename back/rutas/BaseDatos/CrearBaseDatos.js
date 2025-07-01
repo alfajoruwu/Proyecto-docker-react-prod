@@ -132,53 +132,106 @@ router.post('/CrearDB', authMiddleware, Verifica("usuario"), async (req, res) =>
         return res.status(400).json({ error: `Error SQL: ${validacion.error}` });
     }
 
+    // Variables para cleanup en caso de error
+    let dbId = null;
+    let poolCreacion = null;
+    let tempPool = null;
 
-    // -- Añadir DB a registros de APP ---
-    const result = await pool.query(
-        'INSERT INTO BaseDatos (Nombre,Descripcion,Resumen,ID_Usuario) VALUES ($1,$2,$3,$4) RETURNING ID',
-        [dbName, Descripcion, Resumen, req.user.id]
-    );
-    const ResultadoIncert = result.rows[0];
-
-
-    // --- Crear conexion a la DB de creacion ---
-    const poolCreacion = CrearConexionCreacion();
-
-    // --- Crear nueva DB ---
-    // NOTA: se le da acceso al usuario del incert
-    const query = `CREATE DATABASE "ID_${ResultadoIncert.id}" OWNER "${process.env.CreacionTablas_user}"`;
     try {
-        await poolCreacion.query(query);
-        console.log(`✅ Base de datos creada: "ID_${ResultadoIncert.id}"`);
-        await poolCreacion.end();
-
-    } catch (err) {
-        console.error(`❌ Error creando la base de datos "ID_${ResultadoIncert.id}":`, err.message);
-        return res.status(400).json({ error: 'Error al crear la base de datos' });
-    }
-
-    // --- Poblar SQL init ---
-    try {
-        const temp = NewPool_create('ID_' + ResultadoIncert.id);
-        const CreacionSQL = await temp.query(SQL);
-        await temp.end();
-    } catch (err) {
-        console.error(`❌ Error "${err.message}":`, err.message);
-        return res.status(400).json({ error: `Error SQL: ${err.message}` });
-    }
-
-    // --- Actualizar campo de SQLinit ---
-    try {
-        await pool.query(
-            'UPDATE BaseDatos SET SQL_init = $1 WHERE ID = $2 AND ID_Usuario = $3',
-            [SQL, ResultadoIncert.id, req.user.id]
+        // -- Añadir DB a registros de APP ---
+        const result = await pool.query(
+            'INSERT INTO BaseDatos (Nombre,Descripcion,Resumen,ID_Usuario) VALUES ($1,$2,$3,$4) RETURNING ID',
+            [dbName, Descripcion, Resumen, req.user.id]
         );
-    } catch (err) {
-        console.error(`❌ Error actualizando SQL_init:`, err.message);
-        return res.status(500).json({ error: 'Error al actualizar SQL_init' });
-    }
+        const ResultadoIncert = result.rows[0];
+        dbId = ResultadoIncert.id;
 
-    res.json({ message: 'Base de datos creada', usuario: req.user });
+        // --- Crear conexion a la DB de creacion ---
+        poolCreacion = CrearConexionCreacion();
+
+        // --- Crear nueva DB ---
+        // NOTA: se le da acceso al usuario del incert
+        const query = `CREATE DATABASE "ID_${dbId}" OWNER "${process.env.CreacionTablas_user}"`;
+        try {
+            await poolCreacion.query(query);
+            console.log(`✅ Base de datos creada: "ID_${dbId}"`);
+        } catch (err) {
+            console.error(`❌ Error creando la base de datos "ID_${dbId}":`, err.message);
+            throw new Error(`Error al crear la base de datos: ${err.message}`);
+        }
+
+        // --- Poblar SQL init ---
+        try {
+            tempPool = NewPool_create('ID_' + dbId);
+            const CreacionSQL = await tempPool.query(SQL);
+            await tempPool.end();
+            tempPool = null;
+        } catch (err) {
+            console.error(`❌ Error ejecutando SQL inicial "${err.message}":`, err.message);
+            throw new Error(`Error SQL: ${err.message}`);
+        }
+
+        // --- Actualizar campo de SQLinit ---
+        try {
+            await pool.query(
+                'UPDATE BaseDatos SET SQL_init = $1 WHERE ID = $2 AND ID_Usuario = $3',
+                [SQL, dbId, req.user.id]
+            );
+        } catch (err) {
+            console.error(`❌ Error actualizando SQL_init:`, err.message);
+            throw new Error(`Error al actualizar SQL_init: ${err.message}`);
+        }
+
+        // Cerrar pool de creación si aún está abierto
+        if (poolCreacion) {
+            await poolCreacion.end();
+            poolCreacion = null;
+        }
+
+        res.json({ message: 'Base de datos creada', usuario: req.user });
+
+    } catch (err) {
+        console.error(`❌ Error en el proceso de creación de DB:`, err.message);
+
+        // --- CLEANUP: Limpiar recursos y datos creados ---
+        try {
+            // Cerrar pools si están abiertos
+            if (tempPool) {
+                await tempPool.end();
+            }
+
+            if (poolCreacion) {
+                // Intentar eliminar la base de datos física si se creó
+                if (dbId) {
+                    try {
+                        const dropQuery = `DROP DATABASE IF EXISTS "ID_${dbId}"`;
+                        await poolCreacion.query(dropQuery);
+                        console.log(`🧹 Base de datos física eliminada por rollback: "ID_${dbId}"`);
+                    } catch (dropErr) {
+                        console.error(`❌ Error eliminando base de datos física en rollback:`, dropErr.message);
+                    }
+                }
+                await poolCreacion.end();
+            }
+
+            // Eliminar el registro de la tabla BaseDatos si se creó
+            if (dbId) {
+                try {
+                    await pool.query(
+                        'DELETE FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+                        [dbId, req.user.id]
+                    );
+                    console.log(`🧹 Registro de BaseDatos eliminado por rollback: ID ${dbId}`);
+                } catch (deleteErr) {
+                    console.error(`❌ Error eliminando registro en rollback:`, deleteErr.message);
+                }
+            }
+        } catch (cleanupErr) {
+            console.error(`❌ Error durante cleanup:`, cleanupErr.message);
+        }
+
+        return res.status(400).json({ error: err.message });
+    }
 });
 
 
@@ -355,7 +408,7 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
         // Si llegamos aquí, hay un nuevo SQL, debemos recrear la DB
         // Obtenemos metadatos existentes en caso de que no se haya proporcionado alguno nuevo
         const existingMetadata = await pool.query(
-            'SELECT Nombre, Descripcion, Resumen FROM BaseDatos WHERE ID = $1',
+            'SELECT Nombre, Descripcion, Resumen, SQL_init FROM BaseDatos WHERE ID = $1',
             [dbId]
         );
 
@@ -367,12 +420,18 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
         const finalDbName = dbName || metadata.Nombre;
         const finalDescripcion = Descripcion || metadata.Descripcion;
         const finalResumen = Resumen || metadata.Resumen;
+        const originalSQL = metadata.SQL_init; // Para rollback
 
-        // Crear conexión a la DB de creación
-        const poolCreacion = CrearConexionCreacion();
+        // Variables para cleanup
+        let poolCreacion = null;
+        let tempPool = null;
+        let dbDropped = false;
 
-        // Verificar conexiones activas antes de eliminar
         try {
+            // Crear conexión a la DB de creación
+            poolCreacion = CrearConexionCreacion();
+
+            // Verificar conexiones activas antes de eliminar
             const activeConnections = await checkActiveConnections(dbName_physical, poolCreacion);
 
             if (activeConnections > 0) {
@@ -395,11 +454,11 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
             try {
                 const dropQuery = `DROP DATABASE IF EXISTS "${dbName_physical}"`;
                 await poolCreacion.query(dropQuery);
+                dbDropped = true;
                 console.log(`✅ Base de datos eliminada para recreación: "${dbName_physical}"`);
             } catch (err) {
                 console.error(`❌ Error eliminando la base de datos "${dbName_physical}":`, err.message);
-                await poolCreacion.end();
-                return res.status(500).json({ error: 'Error al eliminar la base de datos para actualizarla' });
+                throw new Error(`Error al eliminar la base de datos para actualizarla: ${err.message}`);
             }
 
             // Crear nueva DB con el mismo nombre
@@ -409,40 +468,81 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
                 console.log(`✅ Base de datos recreada: "${dbName_physical}"`);
             } catch (err) {
                 console.error(`❌ Error recreando la base de datos "${dbName_physical}":`, err.message);
-                await poolCreacion.end();
-                return res.status(500).json({ error: 'Error al recrear la base de datos' });
-            } finally {
-                await poolCreacion.end();
+                throw new Error(`Error al recrear la base de datos: ${err.message}`);
             }
 
             // Poblar SQL init
             try {
-                const temp = NewPool_create(dbName_physical);
-                const CreacionSQL = await temp.query(SQL);
-                await temp.end();
+                tempPool = NewPool_create(dbName_physical);
+                const CreacionSQL = await tempPool.query(SQL);
+                await tempPool.end();
+                tempPool = null;
             } catch (err) {
                 console.error(`❌ Error SQL "${err.message}":`, err.message);
-                return res.status(400).json({ error: `Error SQL: ${err.message}` });
+                throw new Error(`Error SQL: ${err.message}`);
             }
 
             // Actualizar metadatos en la tabla BaseDatos y añadir SQL_init
-
             const updateResult = await pool.query(
                 'UPDATE BaseDatos SET Nombre = $1, Descripcion = $2, Resumen = $3, SQL_init = $4 WHERE ID = $5 AND ID_Usuario = $6 RETURNING ID, Nombre, Descripcion, Resumen, SQL_init, Fecha_Creacion',
                 [finalDbName, finalDescripcion, finalResumen, SQL, dbId, req.user.id]
             );
 
+            // Cerrar pool de creación
+            if (poolCreacion) {
+                await poolCreacion.end();
+                poolCreacion = null;
+            }
+
             res.json({
                 message: 'Base de datos y SQL actualizados correctamente',
                 DB: updateResult.rows[0]
             });
+
         } catch (err) {
-            console.error(`❌ Error general actualizando la base de datos:`, err.message);
-            return res.status(500).json({ error: 'Error al actualizar la base de datos' });
+            console.error(`❌ Error en proceso de actualización:`, err.message);
+
+            // --- CLEANUP Y ROLLBACK ---
+            try {
+                // Cerrar pools si están abiertos
+                if (tempPool) {
+                    await tempPool.end();
+                }
+
+                if (poolCreacion) {
+                    // Si se eliminó la DB pero falló la recreación, intentar restaurar con SQL original
+                    if (dbDropped && originalSQL) {
+                        try {
+                            // Recrear la base de datos con los datos originales
+                            const restoreCreateQuery = `CREATE DATABASE "${dbName_physical}" OWNER "${process.env.CreacionTablas_user}"`;
+                            await poolCreacion.query(restoreCreateQuery);
+                            console.log(`🔄 Base de datos recreada para rollback: "${dbName_physical}"`);
+
+                            // Restaurar SQL original
+                            const restoreTempPool = NewPool_create(dbName_physical);
+                            try {
+                                await restoreTempPool.query(originalSQL);
+                                console.log(`🔄 SQL original restaurado en rollback`);
+                            } catch (restoreErr) {
+                                console.error(`❌ Error restaurando SQL original:`, restoreErr.message);
+                            } finally {
+                                await restoreTempPool.end();
+                            }
+                        } catch (restoreErr) {
+                            console.error(`❌ Error en rollback de base de datos:`, restoreErr.message);
+                        }
+                    }
+                    await poolCreacion.end();
+                }
+            } catch (cleanupErr) {
+                console.error(`❌ Error durante cleanup en EditarDB:`, cleanupErr.message);
+            }
+
+            throw err;
         }
     } catch (err) {
         console.error(`❌ Error general en la ruta EditarDB:`, err.message);
-        return res.status(500).json({ error: 'Error al actualizar la base de datos' });
+        return res.status(500).json({ error: err.message || 'Error al actualizar la base de datos' });
     }
 });
 

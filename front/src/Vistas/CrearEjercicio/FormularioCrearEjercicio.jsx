@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 import { FaFilePen } from "react-icons/fa6";
 import { FaFileArrowUp } from "react-icons/fa6";
+import { FaCode, FaSave, FaTimes, FaChevronLeft, FaChevronRight, FaTags, FaPlus, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import CustomTable from '../../AuxS/CustomTable';
@@ -126,7 +127,12 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios }) => {
     return (
         <div className='p-4 gap-6 flex flex-col'>
 
-            <h1 class="text-2xl font-bold mb-6 text-center">Crear ejercicio</h1>
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                    <FaCode className="text-xl text-primary-content" />
+                </div>
+                <h1 className="text-2xl font-bold text-primary">Crear ejercicio</h1>
+            </div>
 
             <ul className="steps">
                 <li onClick={() => SetPaginaActual(0)} className={PaginaActual >= 0 ? "step step-primary" : "step "}>Nombre</li>
@@ -159,6 +165,7 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios }) => {
                     {/* Botón de navegación */}
                     <div className='flex justify-end'>
                         <button onClick={() => SetPaginaActual(1)} className='btn btn-primary'>
+                            <FaArrowRight className="mr-2" />
                             Siguiente
                         </button>
                     </div>
@@ -205,8 +212,14 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios }) => {
 
 
                     <div className='flex  justify-between'>
-                        <button onClick={() => SetPaginaActual(0)} className='btn btn-primary'>Retroceder</button>
-                        <button onClick={() => SetPaginaActual(2)} className='btn btn-primary'>Siguiente</button>
+                        <button onClick={() => SetPaginaActual(0)} className='btn btn-primary'>
+                            <FaArrowLeft className="mr-2" />
+                            Retroceder
+                        </button>
+                        <button onClick={() => SetPaginaActual(2)} className='btn btn-primary'>
+                            <FaArrowRight className="mr-2" />
+                            Siguiente
+                        </button>
                     </div>
                 </>
             }
@@ -226,7 +239,10 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios }) => {
 
                     <div className='flex flex-col'>
                         <label className='label'>Crea solucion del ejercicio</label>
-                        <button onClick={() => IrCrearSolucion()} className='btn btn-primary'>Ir a crear solucion</button>
+                        <button onClick={() => IrCrearSolucion()} className='btn btn-primary'>
+                            <FaCode className="mr-2" />
+                            Ir a crear solucion
+                        </button>
                     </div>
 
                     <div className='flex flex-col'>
@@ -258,8 +274,14 @@ const FormularioCrearEjercicio = ({ listaDB, ActualizarEjercicios }) => {
 
 
                     <div className='flex justify-between'>
-                        <button onClick={() => SetPaginaActual(1)} className='btn btn-primary'>Retroceder</button>
-                        <button onClick={() => SetPaginaActual(3)} className='btn btn-primary'>Siguiente</button>
+                        <button onClick={() => SetPaginaActual(1)} className='btn btn-primary'>
+                            <FaArrowLeft className="mr-2" />
+                            Retroceder
+                        </button>
+                        <button onClick={() => SetPaginaActual(3)} className='btn btn-primary'>
+                            <FaArrowRight className="mr-2" />
+                            Siguiente
+                        </button>
                     </div>
                 </>
             }

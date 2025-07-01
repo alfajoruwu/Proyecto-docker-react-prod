@@ -346,7 +346,7 @@ const RealizarEjercicio = ({ }) => {
                 </div>
 
                 <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary w-full mb-2">
-                    <option value="" disabled>Selecciona una tabla</option>
+
                     {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
                         <option key={index} value={tabla.tablename}>
                             {tabla.tablename}

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 import { FaFilePen } from "react-icons/fa6";
 import { FaFileArrowUp } from "react-icons/fa6";
+import { FaDatabase, FaSave, FaTimes, FaCode, FaCheckCircle } from "react-icons/fa";
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 
@@ -102,7 +103,12 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
     return (
         <div className='p-4 gap-6 flex flex-col'>
 
-            <h1 class="text-2xl font-bold mb-6 text-center">Crear base de datos</h1>
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                    <FaDatabase className="text-xl text-primary-content" />
+                </div>
+                <h1 className="text-2xl font-bold text-primary">Crear base de datos</h1>
+            </div>
 
             <div>
                 <label className='label'>Nombre de la base de datos</label>
@@ -122,12 +128,10 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
             {
                 NombreArchivo != '' &&
                 <div className="flex bg-success rounded p-3 text-accent-content shadow-lg">
-                    <div className='flex gap-2 '>
-
+                    <div className='flex gap-2 items-center'>
+                        <FaCheckCircle className="text-lg" />
                         <h1>Archivo seleccionado: {NombreArchivo}</h1>
                     </div>
-
-
                 </div>
             }
 
@@ -140,8 +144,14 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
             </div>
 
             <div className='flex flex-wrap flex-row w-[100%] gap-3'>
-                <button onClick={() => CrearDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>Crear nueva base de datos</button>
-                <button onClick={() => { LimpiarFormularios(); }} className='btn flex-1 btn-error'>Limpiar formulario</button>
+                <button onClick={() => CrearDB(Nombre, Resumen, Contexto)} className='btn flex-3 btn-success'>
+                    <FaSave className="mr-2" />
+                    Crear nueva base de datos
+                </button>
+                <button onClick={() => { LimpiarFormularios(); }} className='btn flex-1 btn-error'>
+                    <FaTimes className="mr-2" />
+                    Limpiar formulario
+                </button>
             </div>
 
 
@@ -151,7 +161,12 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
             <dialog id="Subir_Archivo" className="modal">
                 <div className="modal-box flex flex-col gap-2 w-11/12 max-w-5xl">
 
-                    <h3 className="font-bold text-lg">Subir archivo SQL.init</h3>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                            <FaFileArrowUp className="text-lg text-primary-content" />
+                        </div>
+                        <h3 className="font-bold text-lg">Subir archivo SQL.init</h3>
+                    </div>
 
                     <div className='p-6'>
                         <input onChange={handleFileChange} type="file" class="file-input w-full file-input-primary" />
@@ -195,7 +210,12 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
 
             <dialog id="EditarSQL" className="modal">
                 <div className="modal-box w-11/12 max-w-5xl">
-                    <h3 className="font-bold  text-lg">Editor archivo</h3>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                            <FaCode className="text-lg text-secondary-content" />
+                        </div>
+                        <h3 className="font-bold text-lg">Editor archivo</h3>
+                    </div>
                     <div className='  flex flex-col gap-3 '>
 
                         <CodeMirror className=''
@@ -230,14 +250,26 @@ const FormularioCrearDB = ({ SetNombre, SetResumen, Setcontext, NombreArchivo, S
 
                         {NombreArchivo == '' &&
                             <div className='flex flex-row gap-3'>
-                                <button onClick={() => CrearnuevoINIT(SQLinicial)} className='btn flex-1 btn-primary'>Guardar nuevo archivo</button>
-                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>Cancelar</button>
+                                <button onClick={() => CrearnuevoINIT(SQLinicial)} className='btn flex-1 btn-primary'>
+                                    <FaSave className="mr-2" />
+                                    Guardar nuevo archivo
+                                </button>
+                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>
+                                    <FaTimes className="mr-2" />
+                                    Cancelar
+                                </button>
                             </div>
                         }
                         {NombreArchivo != '' &&
                             <div className='flex flex-row gap-3'>
-                                <button onClick={() => ModificarINIT(SQLinicial)} className='btn flex-1 btn-primary'>Actualizar</button>
-                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>Cancelar</button>
+                                <button onClick={() => ModificarINIT(SQLinicial)} className='btn flex-1 btn-primary'>
+                                    <FaSave className="mr-2" />
+                                    Actualizar
+                                </button>
+                                <button onClick={() => CancelarCambios()} className='btn flex-1 btn-error'>
+                                    <FaTimes className="mr-2" />
+                                    Cancelar
+                                </button>
                             </div>
                         }
                     </div>
