@@ -25,7 +25,7 @@ function App() {
         <BrowserRouter>
           <Routes>
 
-            <Route path="/" element={<Principal />} />
+            <Route path="/" element={<Login />} />
 
             {/* Inicio de seccion */}
             <Route path="/login" element={<Login />} />

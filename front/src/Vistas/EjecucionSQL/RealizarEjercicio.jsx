@@ -105,7 +105,7 @@ const RealizarEjercicio = ({ }) => {
             });
     }
 
-    const IrCrearEjercicio = () => { Navigate('/') }
+    const IrCrearEjercicio = () => { Navigate('/principal') }
 
     const CancelarCreacionDERespuesta = () => {
         SetSQLEjecutar('');

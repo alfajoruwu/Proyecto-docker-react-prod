@@ -36,7 +36,7 @@ const Navbar = ({ MenuLateral = true }) => {
 
     const IrCrearBaseDatos = () => { Navigate('/CrearDB') }
     const IrCrearEjercicio = () => { Navigate('/CrearEjercicio') }
-    const IrEjercicios = () => { Navigate('/') }
+    const IrEjercicios = () => { Navigate('/principal') }
 
     const IrloginSimple = () => { Navigate('/login') }
 

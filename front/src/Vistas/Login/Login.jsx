@@ -23,7 +23,7 @@ const Login = () => {
 
     const IrRegistro = () => { Navigate('/Registro') }
     const IrLogin = () => { Navigate('/Login') }
-    const Irprincipal = () => { Navigate('/') }
+    const Irprincipal = () => { Navigate('/principal') }
     // ----- Variables -------
 
     const [Usuario, SetUsuario] = useState("")
@@ -36,7 +36,7 @@ const Login = () => {
         SetContrasena(event.target.value)
     }
 
-    const IrEjercicios = () => { Navigate('/') }
+    const IrEjercicios = () => { Navigate('/principal') }
 
     // ----- Funciones ------
 
