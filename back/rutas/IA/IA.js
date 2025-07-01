@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { enviar, enviarStream, obtenerEstadoApiKey, controlador } = require('./AuxIA');
+const pool = require('../../config/DB');
+const { authMiddleware, Verifica } = require('../../middleware/TipoUsuario.js');
 
 // Variable global que se puede modificar en tiempo de ejecución
 let offlineMode = process.env.DISABLE_OPENROUTER === 'true';
@@ -45,10 +47,10 @@ router.post('/ejemplo-consulta', async (req, res) => {
     }
 });
 
-router.post('/PromptA', async (req, res) => {
+router.post('/PromptA', authMiddleware, Verifica("usuario"), async (req, res) => {
     try {
 
-        const { contexto, problema, respuesta } = req.body;
+        const { contexto, problema, respuesta, ejercicioId } = req.body;
 
         const Modelo = "deepseek/deepseek-chat-v3-0324:free"
 
@@ -329,10 +331,30 @@ ${respuesta}
             });
         }
 
+        const respuestaIA = resultado.choices[0].message.content.trim();
+
+        // Registrar la consulta IA en la base de datos
+        try {
+            const preguntaDatos = JSON.stringify({
+                contexto: contexto,
+                problema: problema,
+                respuesta: respuesta
+            });
+
+            await pool.query(
+                'INSERT INTO AyudaIA (ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion) VALUES ($1, $2, $3, $4, $5)',
+                [req.user.id, ejercicioId || null, preguntaDatos, respuestaIA, 'PromptA']
+            );
+            console.log('✅ Consulta IA registrada exitosamente para PromptA');
+        } catch (dbError) {
+            console.error('❌ Error registrando consulta IA:', dbError.message);
+            // No fallar la respuesta por error de registro
+        }
+
         res.status(200).json({
-            respuesta: resultado.choices[0].message.content.trim(),
+            respuesta: respuestaIA,
             metadata: {
-                caracteres: resultado.choices[0].message.content.length,
+                caracteres: respuestaIA.length,
                 modelo: resultado.model,
                 tiempo_respuesta: resultado.created ? new Date(resultado.created * 1000) : new Date()
             }
@@ -349,10 +371,10 @@ ${respuesta}
 });
 
 
-router.post('/PromptB', async (req, res) => {
+router.post('/PromptB', authMiddleware, Verifica("usuario"), async (req, res) => {
     try {
 
-        const { contexto, problema, respuesta } = req.body;
+        const { contexto, problema, respuesta, ejercicioId } = req.body;
 
         const Modelo = "deepseek/deepseek-chat-v3-0324:free"
 
@@ -417,10 +439,30 @@ ${respuesta}
             });
         }
 
+        const respuestaIA = resultado.choices[0].message.content.trim();
+
+        // Registrar la consulta IA en la base de datos
+        try {
+            const preguntaDatos = JSON.stringify({
+                contexto: contexto,
+                problema: problema,
+                respuesta: respuesta
+            });
+
+            await pool.query(
+                'INSERT INTO AyudaIA (ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion) VALUES ($1, $2, $3, $4, $5)',
+                [req.user.id, ejercicioId || null, preguntaDatos, respuestaIA, 'PromptB']
+            );
+            console.log('✅ Consulta IA registrada exitosamente para PromptB');
+        } catch (dbError) {
+            console.error('❌ Error registrando consulta IA:', dbError.message);
+            // No fallar la respuesta por error de registro
+        }
+
         res.status(200).json({
-            respuesta: resultado.choices[0].message.content.trim(),
+            respuesta: respuestaIA,
             metadata: {
-                caracteres: resultado.choices[0].message.content.length,
+                caracteres: respuestaIA.length,
                 modelo: resultado.model,
                 tiempo_respuesta: resultado.created ? new Date(resultado.created * 1000) : new Date()
             }

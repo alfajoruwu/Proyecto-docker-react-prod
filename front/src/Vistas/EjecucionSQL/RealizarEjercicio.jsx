@@ -288,12 +288,17 @@ const RealizarEjercicio = ({ }) => {
 
         SetCargandoRespuestaIA(true);
 
-        apiClient.post('/IA/PromptA', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
+        apiClient.post('/IA/PromptA', {
+            contexto: DatosDB.sql_init,
+            problema: ProblemaEjercicio,
+            respuesta: SQLEjecutar,
+            ejercicioId: IdEjercicioResolver
+        })
             .then(response => {
                 console.log('Respuesta ia:', response.data);
                 SetRespuestaIA(response.data.respuesta);
                 SetCargandoRespuestaIA(false);
-                mostrarToast(response.data.message, 'success', 3000);
+                mostrarToast('Respuesta de IA recibida', 'success', 3000);
             })
             .catch(error => {
                 console.error('Error del backend:', error.response?.data?.error || 'Error desconocido');
@@ -305,14 +310,20 @@ const RealizarEjercicio = ({ }) => {
     const EnviarMensajeIA2 = () => {
         // Validar que los valores no estén vacíos
 
+
         SetCargandoRespuestaIA(true);
 
-        apiClient.post('/IA/PromptB', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
+        apiClient.post('/IA/PromptB', {
+            contexto: DatosDB.sql_init,
+            problema: ProblemaEjercicio,
+            respuesta: SQLEjecutar,
+            ejercicioId: IdEjercicioResolver
+        })
             .then(response => {
                 console.log('Respuesta ia:', response.data);
                 SetRespuestaIA(response.data.respuesta);
                 SetCargandoRespuestaIA(false);
-                mostrarToast(response.data.message, 'success', 3000);
+                mostrarToast('Respuesta de IA recibida', 'success', 3000);
             })
             .catch(error => {
                 console.error('Error del backend:', error.response?.data?.error || 'Error desconocido');

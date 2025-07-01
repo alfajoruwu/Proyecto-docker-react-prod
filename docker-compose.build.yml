@@ -40,6 +40,13 @@ services:
       - postgres_data2:/var/lib/postgresql/data
       - ./DB-Usuarios/init.sh:/docker-entrypoint-initdb.d/init.sh
 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - ${ADMINER_PORT}:${ADMINER_PORT}
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
 
 volumes:
   postgres_data1:
