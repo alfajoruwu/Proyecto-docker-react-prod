@@ -80,7 +80,7 @@ const Principal = () => {
 
     // Cargar bases de datos
     const cargarBasesDatos = () => {
-        apiClient.get('/basedatos/ObtenerDBs')
+        apiClient.get('/basedatos/ObtenerDBsPublico')
             .then(response => {
                 console.log('Base de datos obtenidas:', response.data);
 

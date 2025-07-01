@@ -182,6 +182,20 @@ router.post('/CrearDB', authMiddleware, Verifica("usuario"), async (req, res) =>
 });
 
 
+
+router.get('/ObtenerDBsPublico', authMiddleware, Verifica("usuario"), async (req, res) => {
+
+    console.log("Usuario autenticado:", req.user.id);
+    console.log("Rol del usuario:", req.user.rol);
+
+    const result = await pool.query('SELECT ID,Nombre,Descripcion,Resumen,Fecha_Creacion FROM BaseDatos');
+
+    const ResultadoQuery = result.rows[0];
+
+    res.json({ message: 'Tdoas las bases de datos', DB: result });
+});
+
+
 router.get('/ObtenerDBs', authMiddleware, Verifica("usuario"), async (req, res) => {
 
     console.log("Usuario autenticado:", req.user.id);
@@ -432,6 +446,80 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
     }
 });
 
+router.get('/ObtenerDB_publico/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
+    const { id: dbId } = req.params;
+
+    if (!dbId) {
+        return res.status(400).json({ error: 'ID de base de datos no proporcionado' });
+    }
+
+    console.log(`[INFO] Solicitud para obtener DB ID: ${dbId} por Usuario ID: ${req.user.id}`);
+
+    try {
+        // 1. Obtener la base de datos por ID (sin validar dueño)
+        const dbCheckResult = await pool.query(
+            `
+            SELECT 
+                b.ID, 
+                b.Nombre, 
+                b.Descripcion, 
+                b.Resumen, 
+                b.SQL_init, 
+                b.Fecha_Creacion,
+                u.nombre AS Nombre_Autor
+            FROM BaseDatos b
+            JOIN Usuarios u ON b.ID_Usuario = u.ID
+            WHERE b.ID = $1`,
+            [dbId]
+        );
+
+        if (dbCheckResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Base de datos no encontrada' });
+        }
+
+        const dbData = dbCheckResult.rows[0];
+        let tempPool = null;
+
+        try {
+            // 2. Conectar a la base de datos específica del usuario
+            tempPool = NewPool('ID_' + dbId);
+
+            // 3. Obtener estructura de las tablas
+            const tablasQuery = `
+                SELECT tablename
+                FROM pg_catalog.pg_tables
+                WHERE schemaname = 'public';
+            `;
+
+            const estructuraResult = await tempPool.query(tablasQuery);
+
+            res.json({
+                message: 'Base de datos y estructura obtenidas correctamente',
+                db: dbData,
+                estructura: estructuraResult.rows
+            });
+
+        } catch (structureError) {
+            console.error(`[ERROR] No se pudo obtener la estructura de la DB ID ${dbId}:`, structureError.message);
+            // Si falla la estructura, devolver los datos básicos
+            res.status(500).json({
+                message: 'Base de datos encontrada, pero ocurrió un error al obtener su estructura.',
+                db: dbData,
+                error: 'No se pudo leer la estructura de las tablas.'
+            });
+        } finally {
+            // 4. Cerrar el pool temporal si fue creado
+            if (tempPool) {
+                await tempPool.end();
+                console.log(`[INFO] Pool temporal para DB ID ${dbId} cerrado.`);
+            }
+        }
+
+    } catch (mainError) {
+        console.error(`[FATAL] Error crítico obteniendo la base de datos ID ${dbId}:`, mainError.message);
+        return res.status(500).json({ error: 'Error interno del servidor al procesar la solicitud.' });
+    }
+});
 
 router.delete('/BorrarDB/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
     const dbId = req.params.id;

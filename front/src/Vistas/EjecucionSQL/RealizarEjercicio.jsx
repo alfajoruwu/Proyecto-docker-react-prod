@@ -6,7 +6,7 @@ import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 import confetti from 'canvas-confetti';
-
+import ReactMarkdown from 'react-markdown';
 import './SQLEjecucion.css';
 import CustomTable from '../../AuxS/CustomTable';
 import CodeMirror from '@uiw/react-codemirror';
@@ -187,6 +187,15 @@ const RealizarEjercicio = ({ }) => {
         SetRespuestaIA(event.target.value)
     }
 
+    const [MostrarTabla, SetMostrarTabla] = useState(false)
+    const SetterMostrarTabla = (event) => {
+        SetMostrarTabla(event.target.value)
+    }
+
+    const [MostrarIA, SetMostrarIA] = useState(false)
+    const SetterMostrarIA = (event) => {
+        SetMostrarIA(event.target.value)
+    }
 
     const [CargandoRespuestaIA, SetCargandoRespuestaIA] = useState('')
     const SetterCargandoRespuestaIA = (event) => {
@@ -205,6 +214,8 @@ const RealizarEjercicio = ({ }) => {
                 console.log(response.data)
                 console.log('Datos del ejercicio:', ejercicio);
                 SetResumenEjercicio(ejercicio.resumen || '');
+                SetMostrarTabla(ejercicio.permitirsolucion || false);
+                SetMostrarIA(ejercicio.permitiria || false);
                 SetProblemaEjercicio(ejercicio.problema || '');
                 SetIDDBSeleccionadaEjercicio(ejercicio.id_basedatos || '');
                 idBaseDatos = ejercicio.id_basedatos || '';
@@ -212,7 +223,7 @@ const RealizarEjercicio = ({ }) => {
                 SetTablaSolucionEjercicio(response.data.Tablas || '');
                 console.log(ejercicio.tabla_solucion)
                 // Cargar la base de datos
-                apiClient.get('/basedatos/ObtenerDB/' + idBaseDatos)
+                apiClient.get('/basedatos/ObtenerDB_publico/' + idBaseDatos)
                     .then(response => {
                         const { estructura, db } = response.data;
 
@@ -258,6 +269,13 @@ const RealizarEjercicio = ({ }) => {
 
 
     const EnviarMensajeIA = () => {
+        // Validar que los valores no estén vacíos
+        if (!DatosDB.sql_init || !ProblemaEjercicio || !SQLEjecutar) {
+            console.warn('Uno o más valores requeridos están vacíos.');
+            mostrarToast('Debes tener una respuesta para consultar.', 'warning', 3000);
+            return; // Detener la ejecución si algún valor está vacío
+        }
+
         SetCargandoRespuestaIA(true);
 
         apiClient.post('/IA/PromptA', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
@@ -268,13 +286,15 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast(response.data.message, 'success', 3000);
             })
             .catch(error => {
-                console.error('Error del backend:', error.response.data.error);
+                console.error('Error del backend:', error.response?.data?.error || 'Error desconocido');
                 SetCargandoRespuestaIA(false);
-                mostrarToast(error.response.data.error, 'error', 3000);
+                mostrarToast(error.response?.data?.error || 'Error desconocido', 'error', 3000);
             });
-    }
+    };
 
     const EnviarMensajeIA2 = () => {
+        // Validar que los valores no estén vacíos
+
         SetCargandoRespuestaIA(true);
 
         apiClient.post('/IA/PromptB', { contexto: DatosDB.sql_init, problema: ProblemaEjercicio, respuesta: SQLEjecutar })
@@ -285,11 +305,11 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast(response.data.message, 'success', 3000);
             })
             .catch(error => {
-                console.error('Error del backend:', error.response.data.error);
+                console.error('Error del backend:', error.response?.data?.error || 'Error desconocido');
                 SetCargandoRespuestaIA(false);
-                mostrarToast(error.response.data.error, 'error', 3000);
+                mostrarToast(error.response?.data?.error || 'Error desconocido', 'error', 3000);
             });
-    }
+    };
 
 
     useEffect(() => {
@@ -343,47 +363,59 @@ const RealizarEjercicio = ({ }) => {
 
 
 
-            <div className='ContenidoC p-4 rounded-lg shadow bg-base-200'>
+            <div className="ContenidoC p-4 rounded-lg shadow bg-base-200">
                 <div className="tabs tabs-lift h-full overflow-scroll">
-                    <input defaultChecked type="radio" name="my_tabs_3" className="tab" aria-label="Problema" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">{ProblemaEjercicio}</div>
-
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Contexto DB" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">{DatosDB.descripcion}</div>
-
-
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Tabla esperada" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">  <CustomTable itemsPerPage={4} data={TablaSolucionEjercicio} /> </div>
-
-
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="IA" />
-
-                    {/* Contenedor IA mejorado */}
-                    <div className="tab-content bg-base-100 border-base-300 p-6 h-full overflow-hidden">
-                        <div className="flex flex-col h-full gap-3">
-                            {/* Botones - apilados en móvil */}
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button onClick={() => EnviarMensajeIA()} className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
-                                <button onClick={() => EnviarMensajeIA2()} className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
-                            </div>
-
-                            {/* Área de texto con scroll controlado */}
-                            <div className="flex-1 min-h-0 overflow-y-auto bg-base-200 shadow-lg p-4 rounded-lg">
-
-                                {CargandoRespuestaIA && <span className="loading loading-spinner loading-md"></span>}
-                                {
-                                    <div className='whitespace-pre'>
-                                        {RespuestaIA}
-                                    </div>
-
-                                }
-                                {
-                                    RespuestaIA === '' && !CargandoRespuestaIA && <p className="text-gray-500">respuesta de IA...</p>
-                                }
-
-                            </div>
-                        </div>
+                    {/* Pestaña: Problema */}
+                    <input defaultChecked type="radio" id="tab-problema" name="my_tabs_3" className="tab" aria-label="Problema" />
+                    <div className="tab-content bg-base-100 border-base-300 p-6 max-h-[400px] overflow-y-auto">
+                        <ReactMarkdown>{ProblemaEjercicio}</ReactMarkdown>
                     </div>
+
+                    {/* Pestaña: Contexto DB */}
+                    <input type="radio" id="tab-contexto" name="my_tabs_3" className="tab" aria-label="Contexto DB" />
+                    <div className="tab-content bg-base-100 border-base-300 p-6 max-h-[400px] overflow-y-auto">
+                        <ReactMarkdown>{DatosDB.descripcion}</ReactMarkdown>
+                    </div>
+
+                    {/* Pestaña: Tabla esperada */}
+                    {MostrarTabla && (
+                        <>
+                            <input type="radio" id="tab-tabla" name="my_tabs_3" className="tab" aria-label="Tabla esperada" />
+                            <div className="tab-content bg-base-100 border-base-300 p-6 max-h-[400px] overflow-y-auto">
+                                <CustomTable itemsPerPage={4} data={TablaSolucionEjercicio} />
+                            </div>
+                        </>
+                    )}
+
+                    {/* Pestaña: IA */}
+                    {MostrarIA && (
+                        <>
+                            <input type="radio" id="tab-ia" name="my_tabs_3" className="tab" aria-label="IA" />
+                            <div className="tab-content bg-base-100 border-base-300 p-6 max-h-[400px] overflow-auto">
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    {CargandoRespuestaIA ? (
+                                        <>
+                                            <button disabled className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
+                                            <button disabled className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button onClick={() => EnviarMensajeIA()} className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
+                                            <button onClick={() => EnviarMensajeIA2()} className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 min-h-0 overflow-y-auto bg-base-200 shadow-lg p-4 rounded-lg mt-3">
+                                    {CargandoRespuestaIA && <span className="loading loading-spinner loading-md"></span>}
+                                    {!CargandoRespuestaIA && RespuestaIA && <ReactMarkdown>{RespuestaIA}</ReactMarkdown>}
+                                    {!CargandoRespuestaIA && !RespuestaIA && (
+                                        <p className="text-gray-500">respuesta de IA...</p>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 

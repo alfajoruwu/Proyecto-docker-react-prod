@@ -388,7 +388,6 @@ router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req
     }
 });
 
-
 router.get('/ObtenerEjercicio_Usuario/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
     const ejercicioId = req.params.id;
 
@@ -399,17 +398,32 @@ router.get('/ObtenerEjercicio_Usuario/:id', authMiddleware, Verifica("usuario"),
     try {
         // Obtener el ejercicio con detalles de la base de datos
         const query = `
-            SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos,e.Dificultad, e.tabla_solucion,
-                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
+            SELECT 
+                e.ID, 
+                e.Nombre_Ej, 
+                e.Problema, 
+                e.Descripcion, 
+                e.ID_BaseDatos,
+                e.Dificultad, 
+                e.SQL_Solucion, 
+                e.Tabla_Solucion,
+                e.Fecha_Creacion, 
+                b.Descripcion AS Contexto_DB, 
+                b.Nombre AS Nombre_BaseDatos, 
+                e.PermitirIA, 
+                e.PermitirSolucion, 
+                e.Topicos,
+                u.nombre AS Nombre_Autor
             FROM Ejercicios e
             JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
-            WHERE e.ID = $1 AND (e.ID_Usuario = $2 OR b.ID_Usuario = $2)
+            JOIN Usuarios u ON e.ID_Usuario = u.ID
+            WHERE e.ID = $1
         `;
 
-        const result = await pool.query(query, [ejercicioId, req.user.id]);
+        const result = await pool.query(query, [ejercicioId]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Ejercicio no encontrado o sin acceso' });
+            return res.status(404).json({ error: 'Ejercicio no encontrado' });
         }
 
         const ejercicio = result.rows[0];
@@ -423,25 +437,32 @@ router.get('/ObtenerEjercicio_Usuario/:id', authMiddleware, Verifica("usuario"),
             WHERE ID_Ejercicio = $1 AND ID_Usuario = $2
         `, [ejercicioId, req.user.id]);
 
+        // Procesar tabla_solucion
+        let ResultadoTablasString = [];
+        try {
+            const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
+            const TablasString = JSON.parse(arrayText);
+            ResultadoTablasString = TablasString.map(s => JSON.parse(s));
+        } catch (err) {
+            console.warn('Error al parsear tabla_solucion:', err.message);
+        }
 
-
-        console.log("Tabla de solucion del ejercicio: ", ejercicio.tabla_solucion);
-
-        const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
-        const TablasString = JSON.parse(arrayText);
-        const ResultadoTablasString = TablasString.map(s => JSON.parse(s));
-        console.log("Resultado de las tablas: ", ResultadoTablasString);
         res.json({
             message: 'Ejercicio obtenido correctamente',
             ejercicio: ejercicio,
-            estadisticas: estadisticas.rows[0],
-            Tablas: ResultadoTablasString,
+            estadisticas: estadisticas.rows[0] || {
+                total_intentos: 0,
+                intentos_correctos: 0
+            },
+            Tablas: ResultadoTablasString
         });
+
     } catch (err) {
         console.error(`❌ Error obteniendo ejercicio:`, err.message);
         return res.status(500).json({ error: 'Error al obtener el ejercicio', details: err.message });
     }
 });
+
 
 
 router.get('/ObtenerEjercicio/:id', authMiddleware, Verifica("usuario"), async (req, res) => {
@@ -454,50 +475,71 @@ router.get('/ObtenerEjercicio/:id', authMiddleware, Verifica("usuario"), async (
     try {
         // Obtener el ejercicio con detalles de la base de datos
         const query = `
-            SELECT e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos,e.Dificultad, e.SQL_Solucion, e.tabla_solucion,
-                       e.Fecha_Creacion, b.Descripcion AS Contexto_DB, b.Nombre AS Nombre_BaseDatos, e.permitiria, e.permitirsolucion, e.topicos
+            SELECT 
+                e.ID, 
+                e.Nombre_Ej, 
+                e.Problema, 
+                e.Descripcion, 
+                e.ID_BaseDatos,
+                e.Dificultad, 
+                e.SQL_Solucion, 
+                e.Tabla_Solucion,
+                e.Fecha_Creacion, 
+                b.Descripcion AS Contexto_DB, 
+                b.Nombre AS Nombre_BaseDatos, 
+                e.PermitirIA, 
+                e.PermitirSolucion, 
+                e.Topicos
             FROM Ejercicios e
             JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
-            WHERE e.ID = $1 AND (e.ID_Usuario = $2 OR b.ID_Usuario = $2)
+            WHERE e.ID = $1
         `;
 
-        const result = await pool.query(query, [ejercicioId, req.user.id]);
+        const result = await pool.query(query, [ejercicioId]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Ejercicio no encontrado o sin acceso' });
+            return res.status(404).json({ error: 'Ejercicio no encontrado' });
         }
 
         const ejercicio = result.rows[0];
 
-        // Obtener estadísticas de intentos (opcional)
-        const estadisticas = await pool.query(`
-            SELECT 
-                COUNT(*) AS total_intentos,
-                SUM(CASE WHEN Es_Correcto = true THEN 1 ELSE 0 END) AS intentos_correctos
-            FROM Intentos
-            WHERE ID_Ejercicio = $1 AND ID_Usuario = $2
-        `, [ejercicioId, req.user.id]);
+        // Obtener estadísticas de intentos (solo si el usuario está autenticado)
+        let estadisticas = null;
+        if (req.user && req.user.id) {
+            const statsResult = await pool.query(`
+                SELECT 
+                    COUNT(*) AS total_intentos,
+                    SUM(CASE WHEN Es_Correcto = true THEN 1 ELSE 0 END) AS intentos_correctos
+                FROM Intentos
+                WHERE ID_Ejercicio = $1 AND ID_Usuario = $2
+            `, [ejercicioId, req.user.id]);
 
+            estadisticas = statsResult.rows[0];
+        }
 
+        // Procesar tabla_solucion
+        let ResultadoTablasString = [];
+        try {
+            const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
+            const TablasString = JSON.parse(arrayText);
+            ResultadoTablasString = TablasString.map(s => JSON.parse(s));
+        } catch (err) {
+            console.warn('Error al parsear tabla_solucion:', err.message);
+            ResultadoTablasString = [];
+        }
 
-        console.log("Tabla de solucion del ejercicio: ", ejercicio.tabla_solucion);
-
-        const arrayText = `[${ejercicio.tabla_solucion.slice(1, -1)}]`;
-        const TablasString = JSON.parse(arrayText);
-        const ResultadoTablasString = TablasString.map(s => JSON.parse(s));
-        console.log("Resultado de las tablas: ", ResultadoTablasString);
         res.json({
             message: 'Ejercicio obtenido correctamente',
             ejercicio: ejercicio,
-            estadisticas: estadisticas.rows[0],
+            estadisticas: estadisticas,
             Tablas: ResultadoTablasString,
         });
+
     } catch (err) {
         console.error(`❌ Error obteniendo ejercicio:`, err.message);
         return res.status(500).json({ error: 'Error al obtener el ejercicio', details: err.message });
     }
 });
-
 
 router.put('/editarEjercicio', authMiddleware, Verifica("usuario"), async (req, res) => {
     const { id, nombre, problema, descripcion, solucionSQL, dbId, permitirIA, verRespuestaEsperada, topicos, dificultad, Tabla_Solucion } = req.body;

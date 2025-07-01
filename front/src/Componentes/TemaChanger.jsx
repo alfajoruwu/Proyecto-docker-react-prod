@@ -9,9 +9,11 @@ const TemaChanger = () => {
         document.documentElement.setAttribute('data-theme', tema);
     }, []); // Se ejecuta solo una vez al montar el componente
 
+
+    // dark-orange
     // Función para alternar entre los temas
     const alternarTema = () => {
-        const nuevoTema = tema === 'lig' ? 'dark-orange' : 'lig';
+        const nuevoTema = tema === 'lig' ? 'lig' : 'lig';
         setTema(nuevoTema);
         document.documentElement.setAttribute('data-theme', nuevoTema);
         localStorage.setItem('tema', nuevoTema); // Guardar el tema en localStorage
