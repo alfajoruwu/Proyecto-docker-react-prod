@@ -80,9 +80,14 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                 <div key={ej.id} className="card card-compact w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
                     {/* Header con efecto de degradado */}
                     <div className="bg-neutral p-4 rounded-t-xl">
-                        <h2 className="card-title text-base-100 flex items-center gap-2">
+                        <h2 className="card-title text-base-100">
                             {ej.nombre_ej || 'Sin nombre'}
-
+                            <div className="badge badge-accent ml-2">{{
+                                1: 'Fácil',
+                                2: 'Intermedio',
+                                3: 'Difícil'
+                            }[ej.dificultad] || 'Desconocido'}
+                            </div>
                         </h2>
                     </div>
 
@@ -159,61 +164,105 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
 
 
             <dialog id="Detalles_ejercicios" className="modal">
-                <div className="modal-box  w-[80%] max-w-5xl flex flex-col gap-5">
-                    <h3 className="font-bold text-lg">Detalles del ejercicio:</h3>
-                    <h2 className='text-xl'>{NombreEjercicio}</h2>
-                    <div className='PopUpDatos'>
-
-                        <div className='elementoA card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Problema</h2>
+                <div className="modal-box w-[90%] max-w-6xl bg-base-100 shadow-2xl border border-base-300 rounded-xl">
+                    {/* Header corregido */}
+                    <div className="bg-primary p-4 rounded-t-xl">
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className='p-3'>{ProblemaEjercicio}</p>
+                                <h2 className="text-2xl font-bold text-primary-content mb-2">
+                                    📋 Detalles del Ejercicio
+                                </h2>
+                                <h3 className="text-lg text-primary-content/90 font-medium">
+                                    {NombreEjercicio}
+                                </h3>
                             </div>
-                        </div>
-
-                        <div className='elementoB card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Base de datos: {BaseDATOS}</h2>
-                            <div>
-                                <p className='p-3'>{ContextoDB}</p>
+                            <div className="badge badge-accent badge-lg">
+                                <FaEye className="mr-2" /> Vista Detallada
                             </div>
-                        </div>
-
-                        <div className='elementoC card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Extras</h2>
-                            <div className='flex flex-col p-2 gap-3'>
-                                <div className='p-3 flex flex-row justify-between gap-2 border border-dotted-1 border-primary rounded-lg'>
-                                    <label > Permite IA </label>
-                                    <input type="checkbox" checked={PermiteIA} disabled className="toggle toggle-primary" />
-                                </div>
-
-                                <div className='p-3 flex flex-row justify-between gap-2 border border-dotted-1 border-primary rounded-lg'>
-                                    <label > Permite ver la solucion </label>
-                                    <input type="checkbox" checked={PermiteRespuesta} disabled className="toggle toggle-primary" />
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <div className='elementoD card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Estadisticas</h2>
-
-                            <div className='flex flex-col p-2 gap-3'>
-
-                                <div>
-                                    Dificultad: Facil
-                                </div>
-
-                                <div className=''>
-                                    Estrellas: 100
-                                </div>
-                                <div className=''>
-                                    intentos: 1000
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
+                    {/* Grid moderno para el contenido */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Problema */}
+                        <div className="card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 shadow-lg hover:shadow-xl transition-all duration-300 lg:col-span-2">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
+                                        <FaEye className="text-xl text-info-content" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-info">Enunciado del Problema</h3>
+                                </div>
+                                <div className="bg-base-100 rounded-lg p-6 border-l-4 border-info">
+                                    <p className="text-base-content leading-relaxed text-lg">{ProblemaEjercicio}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Base de datos */}
+                        <div className="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
+                                        <FaTags className="text-xl text-success-content" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-success">Base de Datos</h3>
+                                        <p className="text-success/70 font-medium">{BaseDATOS}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success">
+                                    <p className="text-base-content leading-relaxed">{ContextoDB}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Configuraciones */}
+                        <div className="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-warning rounded-xl flex items-center justify-center">
+                                        <FaTags className="text-xl text-warning-content" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-warning">Configuraciones</h3>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="group hover:bg-base-200 transition-colors duration-200 rounded-lg">
+                                        <div className="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-warning/30 group-hover:border-warning/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 bg-gradient-to-r from-warning to-warning/70 rounded-full"></div>
+                                                <div>
+                                                    <span className="font-medium text-base-content">Asistencia IA</span>
+                                                    <p className="text-sm text-base-content/60">Permite usar ayuda artificial</p>
+                                                </div>
+                                            </div>
+                                            <input type="checkbox" checked={PermiteIA} disabled className="toggle toggle-warning toggle-sm" />
+                                        </div>
+                                    </div>
+                                    <div className="group hover:bg-base-200 transition-colors duration-200 rounded-lg">
+                                        <div className="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-warning/30 group-hover:border-warning/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 bg-gradient-to-r from-warning to-warning/70 rounded-full"></div>
+                                                <div>
+                                                    <span className="font-medium text-base-content">Ver Solución</span>
+                                                    <p className="text-sm text-base-content/60">Acceso a la respuesta correcta</p>
+                                                </div>
+                                            </div>
+                                            <input type="checkbox" checked={PermiteRespuesta} disabled className="toggle toggle-warning toggle-sm" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer con información adicional */}
+                    <div className="mt-6 p-4 bg-gradient-to-r from-base-200 to-base-300 rounded-xl border border-base-300">
+                        <div className="flex items-center justify-center gap-2 text-sm text-base-content/70">
+                            <FaRegCalendarAlt className="text-primary" />
+                            <span>Información completa del ejercicio disponible para revisión</span>
+                        </div>
+                    </div>
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 
 import { formatearFecha } from '../../AuxS/Utilidades';
-import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode } from 'react-icons/fa';
+import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags } from 'react-icons/fa';
 
 import './PopUpDatos.css'
 
@@ -170,48 +170,110 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
 
 
             <dialog id="Resolver-Ejercicios" className="modal">
-                <div className="modal-box  w-[80%] max-w-5xl flex flex-col gap-5">
-
-                    <h2 className='text-xl'>{'Titulo: ' + NombreEjercicio}</h2>
-                    <div className='PopUpDatos'>
-                        <div className='elementoA card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Problema</h2>
+                <div className="modal-box w-[90%] max-w-6xl bg-gradient-to-br from-base-100 to-base-200 shadow-2xl border border-base-300">
+                    {/* Header moderno con gradiente */}
+                    <div className="bg-gradient-to-r from-primary to-secondary p-6  rounded-t-xl">
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className='p-3'>{ProblemaEjercicio}</p>
+                                <h2 className="text-2xl font-bold text-primary-content mb-2">
+                                    🚀 ¡Ejercicio Listo!
+                                </h2>
+                                <h3 className="text-lg text-primary-content/90 font-medium">
+                                    {NombreEjercicio}
+                                </h3>
                             </div>
-                        </div>
-
-                        <div className='elementoB card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Base de datos: {BaseDATOS}</h2>
-                            <div>
-                                <p className='p-3'>{ContextoDB}</p>
-                            </div>
-                        </div>
-
-                        <div className='elementoC card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Extras</h2>
-                            <div className='flex flex-col p-2 gap-3'>
-                                <div className='p-3 flex flex-row justify-between gap-2 border border-dotted-1 border-primary rounded-lg'>
-                                    <label > Permite IA </label>
-                                    <input type="checkbox" checked={PermiteIA} disabled className="toggle toggle-primary" />
-                                </div>
-
-                                <div className='p-3 flex flex-row justify-between gap-2 border border-dotted-1 border-primary rounded-lg'>
-                                    <label > Permite ver la solucion </label>
-                                    <input type="checkbox" checked={PermiteRespuesta} disabled className="toggle toggle-primary" />
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <div className='elementoD card  shadow-xl bg-base-100'>
-                            <h2 className='bg-primary rounded-xl p-3 text-primary-content'>Intentar Resolver</h2>
-                            <div className='flex p-3'>
-                                <button onClick={() => IrResolverEjercicio()} className='btn btn-primary flex-1'>Resolver ejercicio!</button>
+                            <div className="badge badge-accent badge-lg">
+                                <FaCode className="mr-2" /> SQL Challenge
                             </div>
                         </div>
                     </div>
 
+                    {/* Grid moderno para el contenido */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Problema */}
+                        <div className="card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
+                                        <FaEye className="text-xl text-info-content" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-info">Problema a Resolver</h3>
+                                </div>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-info">
+                                    <p className="text-base-content leading-relaxed">{ProblemaEjercicio}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Base de datos */}
+                        <div className="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
+                                        <FaCode className="text-xl text-success-content" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-success">Base de Datos: {BaseDATOS}</h3>
+                                </div>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success">
+                                    <p className="text-base-content leading-relaxed">{ContextoDB}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Configuraciones */}
+                        <div className="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-warning rounded-xl flex items-center justify-center">
+                                        <FaTags className="text-xl text-warning-content" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-warning">Configuraciones</h3>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-warning/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 bg-warning rounded-full"></div>
+                                            <span className="font-medium">Asistencia IA</span>
+                                        </div>
+                                        <input type="checkbox" checked={PermiteIA} disabled className="toggle toggle-warning toggle-sm" />
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-warning/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 bg-warning rounded-full"></div>
+                                            <span className="font-medium">Ver Solución</span>
+                                        </div>
+                                        <input type="checkbox" checked={PermiteRespuesta} disabled className="toggle toggle-warning toggle-sm" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Acción principal */}
+                        <div className="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="card-body p-6 flex flex-col justify-center items-center text-center">
+                                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
+                                    <FaCode className="text-2xl text-primary-content" />
+                                </div>
+                                <h3 className="text-xl font-bold text-primary mb-2">¡Comienza Ahora!</h3>
+                                <p className="text-base-content/70 mb-6">Pon a prueba tus conocimientos de SQL</p>
+                                <button
+                                    onClick={() => IrResolverEjercicio()}
+                                    className="btn btn-primary btn-lg w-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                                >
+                                    <FaCode className="mr-2" />
+                                    Resolver Ejercicio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer con información adicional */}
+                    <div className="mt-6 p-4 bg-base-200 rounded-xl border border-base-300">
+                        <div className="flex items-center justify-center gap-2 text-sm text-base-content/70">
+                            <FaRegCalendar className="text-primary" />
+                            <span>¡Buena suerte con tu ejercicio SQL!</span>
+                        </div>
+                    </div>
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>

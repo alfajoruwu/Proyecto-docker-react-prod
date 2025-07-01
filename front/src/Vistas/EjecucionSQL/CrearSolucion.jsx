@@ -10,6 +10,7 @@ import './SQLEjecucion.css';
 import CustomTable from '../../AuxS/CustomTable';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
+import { FaDatabase, FaCode, FaPlay, FaSave, FaTimes, FaTable, FaFile, FaEye, FaLightbulb } from 'react-icons/fa';
 
 const CrearSolucion = ({ }) => {
 
@@ -156,69 +157,126 @@ const CrearSolucion = ({ }) => {
                 <Navbar />
             </div>
 
-
-            {/* Tablas disponibles en la DB */}
+            {/* Tablas disponibles en la DB - Diseño moderno */}
             <div className='ContenidoA p-4 rounded-lg shadow bg-base-200'>
-                <label className='label'> Tablas disponibles en base de datos</label>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                        <FaDatabase className="text-xl text-primary-content" />
+                    </div>
+                    <h3 className="text-xl font-bold text-primary">Tablas Disponibles</h3>
+                </div>
 
-                <select onChange={manejarCambio} defaultValue="" className="select w-full mb-2">
+                <div className="space-y-4">
+                    <div className="form-control">
+                        <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary w-full">
+                            <option value="" disabled>Selecciona una tabla</option>
+                            {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
+                                <option key={index} value={tabla.tablename}>
+                                    {tabla.tablename}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
-                        <option key={index} value={tabla.tablename}>
-                            {tabla.tablename}
-                        </option>
-                    ))}
-                </select>
-
-                <CustomTable itemsPerPage={4} data={TablaInicial} />
+                    <CustomTable itemsPerPage={4} data={TablaInicial} />
+                </div>
             </div>
 
-
-
-            {/* Contenedor para el editor de SQL */}
+            {/* Contenedor para el editor de SQL - Diseño moderno */}
             <div className='ContenidoB p-4 rounded-lg shadow bg-base-200'>
                 <div className='h-[80%]'>
-                    <div className='flex flex-row justify-between p-3  gap-3 mb-2'>
-                        <label className='label'> SQL a ejecutar</label>
-                        <button onClick={() => EjecutarSQL()} className='btn btn-primary'>Ejecutar SQL</button>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
+                                <FaCode className="text-xl text-secondary-content" />
+                            </div>
+                            <h3 className="text-xl font-bold text-secondary">Editor SQL</h3>
+                        </div>
+                        <button onClick={() => EjecutarSQL()} className='btn btn-secondary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
+                            <FaPlay className="mr-2" />
+                            Ejecutar SQL
+                        </button>
                     </div>
+
                     <CodeMirror className='h-full'
                         value={SQLEjecutar}
                         placeholder={"SELECT * FROM tabla WHERE condicion;"}
                         onChange={SetSQLEjecutar}
                         height='100%'
                         extensions={[sql()]}
-                    ></CodeMirror>
+                    />
                 </div>
             </div>
 
 
 
+            {/* Información del ejercicio - Diseño moderno */}
             <div className='ContenidoC p-4 rounded-lg shadow bg-base-200'>
-                <div className="tabs tabs-lift h-full overflow-scroll">
-                    <input defaultChecked type="radio" name="my_tabs_3" className="tab" aria-label="Problema" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">{ProblemaEjercicio}</div>
-
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Resumen" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">{ResumenEjercicio}</div>
-
-                    <input type="radio" name="my_tabs_3" className="tab" aria-label="Contexto DB" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">{DatosDB.descripcion}</div>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
+                        <FaEye className="text-xl text-info-content" />
+                    </div>
+                    <h3 className="text-xl font-bold text-info">Información del Ejercicio</h3>
                 </div>
-            </div>
 
+                <div className="tabs tabs-lifted h-full overflow-scroll">
+                    <input defaultChecked type="radio" name="my_tabs_3" className="tab tab-lifted" aria-label="Problema" />
+                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <div className="prose max-w-none">
+                            <h4 className="text-lg font-semibold text-accent mb-3">
+                                <FaLightbulb className="inline mr-2" />
+                                Problema a Resolver
+                            </h4>
+                            <p className="leading-relaxed">{ProblemaEjercicio}</p>
+                        </div>
+                    </div>
 
+                    <input type="radio" name="my_tabs_3" className="tab tab-lifted" aria-label="Resumen" />
+                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <div className="prose max-w-none">
+                            <h4 className="text-lg font-semibold text-accent mb-3">
+                                <FaFile className="inline mr-2" />
+                                Resumen del Ejercicio
+                            </h4>
+                            <p className="leading-relaxed">{ResumenEjercicio}</p>
+                        </div>
+                    </div>
 
-            <div className='ContenidoD p-4 rounded-lg shadow bg-base-200'>
-                <div className='flex flex-row justify-between p-3 gap-3'>
-                    <label className='label'> Resultado ejecucion </label>
-                    <div className='flex flex-row gap-3'>
-                        <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error  '> Cancelar</button>
-                        <button onClick={() => CrearRespuesta()} className='btn btn-primary'> Guardar respuesta</button>
+                    <input type="radio" name="my_tabs_3" className="tab tab-lifted" aria-label="Contexto DB" />
+                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <div className="prose max-w-none">
+                            <h4 className="text-lg font-semibold text-accent mb-3">
+                                <FaDatabase className="inline mr-2" />
+                                Contexto de Base de Datos
+                            </h4>
+                            <p className="leading-relaxed">{DatosDB.descripcion}</p>
+                        </div>
                     </div>
                 </div>
-                <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
+            </div>
 
+            {/* Resultados de ejecución - Diseño moderno */}
+            <div className='ContenidoD p-4 rounded-lg shadow bg-base-200'>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
+                            <FaTable className="text-xl text-success-content" />
+                        </div>
+                        <h3 className="text-xl font-bold text-success">Resultado de Ejecución</h3>
+                    </div>
+                    <div className='flex flex-row gap-3'>
+                        <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
+                            <FaTimes className="mr-2" />
+                            Cancelar
+                        </button>
+                        <button onClick={() => CrearRespuesta()} className='btn btn-primary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
+                            <FaSave className="mr-2" />
+                            Guardar Respuesta
+                        </button>
+                    </div>
+                </div>
+
+                <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
             </div>
 
         </div >

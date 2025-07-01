@@ -35,6 +35,36 @@ const CrearDB = () => {
         SetOrdenarpopularidad(event.target.value)
     }
 
+    // --------- Mostrar Elementos --------
+    const [ListaBasesDatos, SetListaBasesDatos] = useState([])
+    const [cargando, setCargando] = useState(false);
+    const [dbIdAEditar, setDbIdAEditar] = useState(null);
+
+    // Función para filtrar y ordenar las bases de datos
+    const filteredAndSortedBasesDatos = ListaBasesDatos.filter(db => {
+        // Filtrar por nombre
+        const matchesName = db.nombre?.toLowerCase().includes(BuscarDB.toLowerCase()) || false;
+        return matchesName;
+    }).sort((a, b) => {
+        // Ordenar por fecha
+        if (OrdenarFecha === 'reciente') {
+            return new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0);
+        }
+        if (OrdenarFecha === 'antiguo') {
+            return new Date(a.fecha_creacion || 0) - new Date(b.fecha_creacion || 0);
+        }
+
+        // Ordenar por popularidad (número de usos)
+        if (Ordenarpopularidad === 'popular') {
+            return (b.usos || 0) - (a.usos || 0);
+        }
+        if (Ordenarpopularidad === 'impopular') {
+            return (a.usos || 0) - (b.usos || 0);
+        }
+
+        return 0;
+    });
+
     // --------- Formulario -----------
     const [Nombre, SetNombre] = useState('')
     const SetterNombre = (event) => {
@@ -50,14 +80,6 @@ const CrearDB = () => {
     const SetterContexto = (event) => {
         SetContexto(event.target.value)
     }
-
-
-
-    // --------- Mostrar Elementos --------
-
-    const [ListaBasesDatos, SetListaBasesDatos] = useState([])
-    const [cargando, setCargando] = useState(false);
-    const [dbIdAEditar, setDbIdAEditar] = useState(null);
 
     // --------- Archivos ------------
 
@@ -140,23 +162,27 @@ const CrearDB = () => {
                 <div className=' Filtros h-30  gap-3 p-3 flex flex-col'>
 
                     {/* ingreso de busqueda nombre */}
-                    <input type="text" placeholder="Buscar bases de datos" class="w-full input input-md" />
+                    <input
+                        type="text"
+                        placeholder="Buscar bases de datos por nombre..."
+                        className="w-full input input-md"
+                        value={BuscarDB}
+                        onChange={SetterBuscarDB}
+                    />
 
                     <div className='flex flex-row gap-3'>
-                        {/* Invgreso de  */}
-                        <select class=" flex-1 select">
-                            <option disabled selected>Ordenar por fecha</option>
-                            <option>Mas reciente</option>
-                            <option>Mas antiguo</option>
-                            <option>XD</option>
+                        {/* Ordenar por fecha */}
+                        <select
+                            className="flex-1 select"
+                            value={OrdenarFecha}
+                            onChange={SetterOrdenarFecha}
+                        >
+                            <option value="" disabled>Ordenar por fecha</option>
+                            <option value="reciente">Más reciente</option>
+                            <option value="antiguo">Más antiguo</option>
                         </select>
 
-                        <select class=" flex-1 select">
-                            <option disabled selected>Ordenar </option>
-                            <option>Chrome</option>
-                            <option>FireFox</option>
-                            <option>Safari</option>
-                        </select>
+
 
                     </div>
 
@@ -170,7 +196,7 @@ const CrearDB = () => {
                         </div>
                     ) : (
                         <MostrarCartasDB
-                            ListaBasesDatos={ListaBasesDatos}
+                            ListaBasesDatos={filteredAndSortedBasesDatos}
                             onEditarDB={handleEditarDB}
                             onBorrarDB={handleBorrarDB}
                         />

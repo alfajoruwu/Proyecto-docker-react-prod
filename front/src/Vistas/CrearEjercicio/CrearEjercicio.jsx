@@ -13,6 +13,7 @@ import MostrarCartasEjercicio from './MostrarCartasEjercicio';
 import FormularioCrearEjercicio from './FormularioCrearEjercicio';
 import { FaPlus } from "react-icons/fa";
 import FormularioEditarEjercicio from './FormularioEditarEjercicio';
+
 const CrearEjercicio = () => {
 
     const { mostrarToast } = useToast();
@@ -49,21 +50,24 @@ const CrearEjercicio = () => {
         SetBuscarDB(event.target.value)
     }
 
+    const [BuscarAutor, SetBuscarAutor] = useState('')
+    const SetterBuscarAutor = (event) => {
+        SetBuscarAutor(event.target.value)
+    }
+
     const [OrdenarFecha, SetOrdenarFecha] = useState('')
     const SetterOrdenarFecha = (event) => {
         SetOrdenarFecha(event.target.value)
     }
 
-    const [Ordenarpopularidad, SetOrdenarpopularidad] = useState('')
-    const SetterOrdenarpopularidad = (event) => {
-        SetOrdenarpopularidad(event.target.value)
+    const [OrdenarDificultad, SetOrdenarDificultad] = useState('')
+    const SetterOrdenarDificultad = (event) => {
+        SetOrdenarDificultad(event.target.value)
     }
 
-    // --------- Formulario -----------
-
-    const [Dificultad, SetDificultad] = useState('')
-    const SetterDificultad = (event) => {
-        SetDificultad(event.target.value)
+    const [FiltrarResueltos, SetFiltrarResueltos] = useState('')
+    const SetterFiltrarResueltos = (event) => {
+        SetFiltrarResueltos(event.target.value)
     }
 
     // --------- Mostrar Elementos --------
@@ -74,11 +78,55 @@ const CrearEjercicio = () => {
 
     // ----------------------------------------------
 
-    const [EjerciciosDisponibles, SetEjerciciosDisponibles] = useState('')
-    const SetterEjerciciosDisponibles = (event) => {
-        SetEjerciciosDisponibles(event.target.value)
-    }
+    const [EjerciciosDisponibles, SetEjerciciosDisponibles] = useState([])
 
+    // Función para filtrar y ordenar ejercicios
+    const filteredAndSortedEjercicios = (Array.isArray(EjerciciosDisponibles) ? EjerciciosDisponibles : []).filter(ejercicio => {
+        // Filtrar por nombre
+        const matchesName = ejercicio?.nombre_ejercicio?.toLowerCase().includes(BuscarDB.toLowerCase()) ||
+            ejercicio?.nombre_ej?.toLowerCase().includes(BuscarDB.toLowerCase()) || false;
+
+        // Filtrar por autor
+        const matchesAuthor = !BuscarAutor ||
+            ejercicio?.autor?.toLowerCase().includes(BuscarAutor.toLowerCase()) ||
+            ejercicio?.nombre_autor?.toLowerCase().includes(BuscarAutor.toLowerCase()) || false;
+
+        // Filtrar por ejercicios resueltos
+        let matchesResolved = true;
+        if (FiltrarResueltos === 'resueltos') {
+            matchesResolved = ejercicio?.resuelto === true || ejercicio?.completado === true;
+        } else if (FiltrarResueltos === 'no_resueltos') {
+            matchesResolved = ejercicio?.resuelto === false || ejercicio?.completado === false ||
+                !ejercicio?.resuelto && !ejercicio?.completado;
+        }
+
+        return matchesName && matchesAuthor && matchesResolved;
+    }).sort((a, b) => {
+        // Ordenar por fecha
+        if (OrdenarFecha === 'reciente') {
+            return new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0);
+        }
+        if (OrdenarFecha === 'antiguo') {
+            return new Date(a.fecha_creacion || 0) - new Date(b.fecha_creacion || 0);
+        }
+
+        // Ordenar por dificultad
+        if (OrdenarDificultad === 'facil') {
+            return (a.dificultad || 0) - (b.dificultad || 0);
+        }
+        if (OrdenarDificultad === 'dificil') {
+            return (b.dificultad || 0) - (a.dificultad || 0);
+        }
+
+        return 0;
+    });
+
+    // --------- Formulario -----------
+
+    const [Dificultad, SetDificultad] = useState('')
+    const SetterDificultad = (event) => {
+        SetDificultad(event.target.value)
+    }
 
     // ---------------------------------------
 
@@ -87,20 +135,17 @@ const CrearEjercicio = () => {
         apiClient.get('/basedatos/ObtenerDBs')
             .then(response => {
                 console.log('Base de datos obtenidas:', response.data);
-
                 SetListaBasesDatos(response.data.DB.rows);
                 console.log('Cantidad de bases de datos:', response.data.DB.rows);
             })
             .catch(error => {
                 console.error('Error al obtener bases de datos:', error);
                 mostrarToast('Error al cargar las bases de datos', 'error', 3000);
-
             });
         console.log(ListaBasesDatos)
     };
 
-
-    // Cargar bases de datos
+    // Cargar ejercicios
     const CargarEjercicios = () => {
         setCargando(true);
         apiClient.get('/ejericicios/ObtenerEjercicios')
@@ -127,7 +172,6 @@ const CrearEjercicio = () => {
             document.getElementById('Editar_db').showModal()
             SetMODOEDITAR('') // Resetear modo editar
         };
-
 
         CargarEjercicios();
         cargarBasesDatos();
@@ -206,23 +250,59 @@ const CrearEjercicio = () => {
 
                 <div className=' Filtros h-30  gap-3 p-3 flex flex-col'>
 
-                    {/* ingreso de busqueda nombre */}
-                    <input type="text" placeholder="Buscar bases de datos" class="w-full input input-md" />
+                    <div className='flex flex-row gap-3'>
+                        {/* Buscar por nombre */}
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre..."
+                            className="flex-1 input input-md"
+                            value={BuscarDB}
+                            onChange={SetterBuscarDB}
+                        />
+
+                        {/* Buscar por autor */}
+                        <input
+                            type="text"
+                            placeholder="Buscar por autor..."
+                            className="flex-1 input input-md"
+                            value={BuscarAutor}
+                            onChange={SetterBuscarAutor}
+                        />
+                    </div>
 
                     <div className='flex flex-row gap-3'>
-                        {/* Invgreso de  */}
-                        <select class=" flex-1 select">
-                            <option disabled selected>Ordenar por fecha</option>
-                            <option>Mas reciente</option>
-                            <option>Mas antiguo</option>
-                            <option>XD</option>
+                        {/* Ordenar por fecha */}
+                        <select
+                            className="flex-1 select"
+                            value={OrdenarFecha}
+                            onChange={SetterOrdenarFecha}
+                        >
+                            <option value="" disabled>Ordenar por fecha</option>
+                            <option value="reciente">Más reciente</option>
+                            <option value="antiguo">Más antiguo</option>
                         </select>
 
-                        <select class=" flex-1 select">
-                            <option disabled selected>Ordenar </option>
-                            <option>Chrome</option>
-                            <option>FireFox</option>
-                            <option>Safari</option>
+                        {/* Ordenar por dificultad */}
+                        <select
+                            className="flex-1 select"
+                            value={OrdenarDificultad}
+                            onChange={SetterOrdenarDificultad}
+                        >
+                            <option value="" disabled>Ordenar por dificultad</option>
+                            <option value="facil">Más fácil</option>
+                            <option value="dificil">Más difícil</option>
+                        </select>
+
+                        {/* Filtrar ejercicios resueltos */}
+                        <select
+                            className="flex-1 select"
+                            value={FiltrarResueltos}
+                            onChange={SetterFiltrarResueltos}
+                        >
+                            <option value="" disabled>Estado de resolución</option>
+                            <option value="">Todos</option>
+                            <option value="resueltos">Solo resueltos</option>
+                            <option value="no_resueltos">No resueltos</option>
                         </select>
 
                     </div>
@@ -237,7 +317,7 @@ const CrearEjercicio = () => {
                         </div>
                     ) : (
                         <MostrarCartasEjercicio
-                            ListaEjercicios={EjerciciosDisponibles}
+                            ListaEjercicios={filteredAndSortedEjercicios}
                             onEditarDB={EditarEjercicio}
                             onBorrarDB={BorrarEjercicio}
                         />
