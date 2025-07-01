@@ -5,6 +5,7 @@ import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
+import confetti from 'canvas-confetti';
 
 import './SQLEjecucion.css';
 import CustomTable from '../../AuxS/CustomTable';
@@ -12,6 +13,36 @@ import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 
 const RealizarEjercicio = ({ }) => {
+
+    const handleCelebrate = () => {
+        const end = Date.now() + 7 * 1000; // 15 segundos
+        const colors = ['#bb0000', '#ffffff']; // Tus colores normales
+
+        const frame = () => {
+            confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors,
+            });
+            confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors,
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        };
+
+        frame(); // Iniciar animación
+    };
+
+
     const Navigate = useNavigate();
     const { mostrarToast } = useToast();
 
@@ -70,13 +101,24 @@ const RealizarEjercicio = ({ }) => {
             });
     }
 
-    const IrCrearEjercicio = () => { Navigate('/CrearEjercicio') }
+    const IrCrearEjercicio = () => { Navigate('/') }
 
     const CancelarCreacionDERespuesta = () => {
         SetSQLEjecutar('');
         SetTablaInicial('');
         IrCrearEjercicio();
 
+    }
+
+    const AbrirPopUPCorrecto = () => {
+        const dialog = document.getElementById('Respuesta_Correcta');
+        dialog.showModal();
+        handleCelebrate()
+    }
+
+    const CerrarPopUpCorrecto = () => {
+        const dialog = document.getElementById('Respuesta_Correcta');
+        dialog.close();
     }
 
     const CrearRespuesta = () => {
@@ -96,7 +138,10 @@ const RealizarEjercicio = ({ }) => {
         })
             .then(response => {
                 console.log('Respuesta de la API:', response);
-                mostrarToast(response.data.message, 'success', 3000);
+
+                response.data.esCorrecto === true ? AbrirPopUPCorrecto() : mostrarToast('Respuesta incorrecta, vuelve a intentarlo!', 'error', 3000);
+
+
             })
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
@@ -353,6 +398,29 @@ const RealizarEjercicio = ({ }) => {
                 <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
 
             </div>
+
+
+            {/* Pop up */}
+
+            <dialog id="Respuesta_Correcta" className="modal">
+                <div className="modal-box flex flex-col gap-2 w-11/12 max-w-5xl">
+
+                    <h3 className="font-bold text-lg">Felicidades!! Completaste correctamente el ejercicio</h3>
+
+                    <p className="py-4">Tu respuesta fue correcta, puedes intentar resolver el ejercicio nuevamente o probar uno diferente.</p>
+
+                    <div className='flex gap-3 flex-row'>
+                        <button onClick={() => IrCrearEjercicio()} className="btn btn-primary">Volver al inicio</button>
+                        <button onClick={() => CerrarPopUpCorrecto()} className="btn btn-secondary">Regresar al ejercicio</button>
+                    </div>
+
+
+                </div>
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+
 
         </div >
     )

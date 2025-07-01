@@ -159,6 +159,140 @@ router.post('/DarEstrella', authMiddleware, Verifica("usuario"), async (req, res
     }
 });
 
+
+router.get('/ObtenerEjercicios_Publico', authMiddleware, Verifica("usuario", "invitado"), async (req, res) => {
+    const { dbId } = req.query;
+
+    try {
+        let query;
+        let params;
+
+        if (dbId) {
+            // Validar acceso a la base de datos si se pasa dbId
+            if (!req.user || !['usuario', 'admin'].includes(req.user.rol)) {
+                return res.status(403).json({ error: 'No puedes acceder a esta base de datos' });
+            }
+
+            const dbCheck = await pool.query(
+                'SELECT ID FROM BaseDatos WHERE ID = $1 AND ID_Usuario = $2',
+                [dbId, req.user.id]
+            );
+
+            if (dbCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'No tienes acceso a esta base de datos' });
+            }
+
+            // Obtener ejercicios específicos de esa base de datos
+            query = `
+                SELECT 
+                    e.ID,
+                    e.Nombre_Ej,
+                    e.Problema,
+                    e.Descripcion,
+                    e.ID_BaseDatos,
+                    e.Fecha_Creacion,
+                    b.Descripcion AS Contexto_DB,
+                    b.Nombre AS Nombre_BaseDatos,
+                    e.PermitirIA,
+                    e.PermitirSolucion,
+                    e.Topicos,
+                    u.nombre AS Nombre_Autor,
+                    COUNT(DISTINCT es.ID) AS Total_Estrellas,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM Estrellas es2
+                        WHERE es2.ID_Ejercicio = e.ID AND es2.ID_Usuario = $2
+                    ) THEN TRUE ELSE FALSE END AS Usuario_Dio_Estrella
+                FROM Ejercicios e
+                JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
+                JOIN Usuarios u ON e.ID_Usuario = u.ID
+                LEFT JOIN Estrellas es ON es.ID_Ejercicio = e.ID
+                WHERE e.ID_BaseDatos = $1
+                GROUP BY e.ID, u.nombre
+                ORDER BY e.Fecha_Creacion DESC;
+            `;
+            params = [dbId, req.user.id];
+        } else {
+            // Obtener TODOS los ejercicios de la plataforma
+
+            if (req.user.rol === 'usuario' || req.user.rol === 'admin') {
+                // Usuario autenticado: incluir info de si dio estrella
+                query = `
+                    SELECT 
+                        e.ID,
+                        e.Nombre_Ej,
+                        e.Problema,
+                        e.Descripcion,
+                        e.ID_BaseDatos,
+                        e.Dificultad,
+                        e.Fecha_Creacion,
+                        b.Descripcion AS Contexto_DB,
+                        b.Nombre AS Nombre_BaseDatos,
+                        e.PermitirIA,
+                        e.PermitirSolucion,
+                        e.Topicos,
+                        u.nombre AS Nombre_Autor,
+                        COUNT(DISTINCT es.ID) AS Total_Estrellas,
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM Estrellas es2
+                            WHERE es2.ID_Ejercicio = e.ID AND es2.ID_Usuario = $1
+                        ) THEN TRUE ELSE FALSE END AS Usuario_Dio_Estrella
+                    FROM Ejercicios e
+                    JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
+                    JOIN Usuarios u ON e.ID_Usuario = u.ID
+                    LEFT JOIN Estrellas es ON es.ID_Ejercicio = e.ID
+                    GROUP BY 
+                        e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, e.Dificultad,
+                        e.Fecha_Creacion, b.Descripcion, b.Nombre, e.PermitirIA, e.PermitirSolucion, e.Topicos,
+                        u.nombre
+                    ORDER BY e.Fecha_Creacion DESC;
+                `;
+                params = [req.user.id];
+            } else {
+                // Invitado: sin info de estrellas
+                query = `
+                    SELECT 
+                        e.ID,
+                        e.Nombre_Ej,
+                        e.Problema,
+                        e.Descripcion,
+                        e.ID_BaseDatos,
+                        e.Dificultad,
+                        e.Fecha_Creacion,
+                        b.Descripcion AS Contexto_DB,
+                        b.Nombre AS Nombre_BaseDatos,
+                        e.PermitirIA,
+                        e.PermitirSolucion,
+                        e.Topicos,
+                        u.nombre AS Nombre_Autor,
+                        COUNT(DISTINCT es.ID) AS Total_Estrellas
+                    FROM Ejercicios e
+                    JOIN BaseDatos b ON e.ID_BaseDatos = b.ID
+                    JOIN Usuarios u ON e.ID_Usuario = u.ID
+                    LEFT JOIN Estrellas es ON es.ID_Ejercicio = e.ID
+                    GROUP BY 
+                        e.ID, e.Nombre_Ej, e.Problema, e.Descripcion, e.ID_BaseDatos, e.Dificultad,
+                        e.Fecha_Creacion, b.Descripcion, b.Nombre, e.PermitirIA, e.PermitirSolucion, e.Topicos,
+                        u.nombre
+                    ORDER BY e.Fecha_Creacion DESC;
+                `;
+                params = [];
+            }
+        }
+
+        const result = await pool.query(query, params);
+
+        res.json({
+            message: 'Ejercicios obtenidos correctamente',
+            ejercicios: result.rows
+        });
+
+    } catch (err) {
+        console.error(`❌ Error obteniendo ejercicios:`, err.message);
+        return res.status(500).json({ error: 'Error al obtener los ejercicios' });
+    }
+});
+
+
 router.get('/ObtenerEjercicios', authMiddleware, Verifica("usuario"), async (req, res) => {
     const { dbId } = req.query;
 

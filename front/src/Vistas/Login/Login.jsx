@@ -100,7 +100,7 @@ const Login = () => {
                         <div class="divider"></div>
 
                         <button onClick={() => IrRegistro()} className="btn btn-secondary">Crear cuenta</button>
-                        <button onClick={() => IrEjercicios()} className="btn btn-secondary">Ingresar como invitado    </button>
+                        {/* <button onClick={() => IrEjercicios()} className="btn btn-secondary">Ingresar como invitado    </button> */}
 
 
                     </div>

@@ -99,7 +99,7 @@ const Principal = () => {
     // Cargar bases de datos
     const CargarEjercicios = () => {
         setCargando(true);
-        apiClient.get('/ejericicios/ObtenerEjercicios')
+        apiClient.get('/ejericicios/ObtenerEjercicios_Publico')
             .then(response => {
                 console.log('Ejercicios:', response.data.ejercicios);
                 setCargando(false);
