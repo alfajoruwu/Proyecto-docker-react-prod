@@ -78,12 +78,6 @@ Al evaluar consultas SQL, clasifica los posibles resultados en las siguientes ca
    - Efecto: Genera una tabla, pero con resultados erróneos.
    - Ejemplo: Usar ">" en lugar de "<" al filtrar salarios bajos.
 
-4. **Uso de Elementos Adicionales**
-   - Descripción: La consulta es funcional y devuelve los datos correctos, pero incluye pasos, funciones o tablas innecesarias que no eran parte del requerimiento original.
-   - Efecto: Aunque el resultado es correcto, la solución no es óptima ni precisa.
-   - Ejemplo: Usar "ORDER BY" cuando no se pide ordenar, o realizar "JOIN" con tablas irrelevantes.
-   - NOTA IMPORTANTE: No fijarse en formas alternativas de llegar al mismo resultado. (formas implicitas o explicitas no son errores)
-
 > Nota: Una consulta puede contener **más de un tipo de error**. Evalúa cuidadosamente cada parte de la consulta antes de emitir el diagnóstico final.
 </Contexto>
 
@@ -271,35 +265,6 @@ Tabla generada por el estudiante:
 | Isabel Allende          | 3            |
 
 </Ejemplo4>
-
-
-<Ejemplo5>
-Listar todos los autores con sus IDs y nombres
-
-Consulta del estudiante:
-SELECT a.autor_id, a.nombre
-FROM autores a
-JOIN libros l ON a.autor_id = l.autor_id;
-
-1.- Elementos adicionales: Uso innecesario de JOIN con la tabla libros.
-  -¿Por qué es un error?:  La tabla libros no es necesaria para obtener los campos solicitados (autor_id y nombre están en la tabla autores).
-
-Tabla esperada:
-| AUTOR_ID | Nombre                  |
-|----------|-------------------------|
-|  1       | Gabriel García Márquez  |
-|  2       | Isabel Allende          |
-|  3       | Stephen King            |
-
-Tabla del estudiante
-
-| AUTOR_ID | Nombre                  |
-|----------|-------------------------|
-|  1       | Gabriel García Márquez  |
-|  2       | Isabel Allende          |
-|  3       | Stephen King            |
-
-</Ejemplo5>
 
 <Consideraciones>
 - No te fijes en el formato del texto entregado; asume que está organizado para la vista del estudiante.
