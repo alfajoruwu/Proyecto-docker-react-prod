@@ -6,11 +6,11 @@ const cors = require('cors');
 const app = express()
 const port = process.env.PORTBACK
 
-app.use(cors({
-  origin: true, // Permite cualquier origen
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors(
+  {
+    origin: ['https://sqlfacilito.cl', 'http://sqlfacilito.cl', 'http://localhost', 'http://localhost:5173', 'http://www.sqlfacilito.cl', 'https://www.sqlfacilito.cl'],
+  }));
+
 // Rutas
 const ejemplos = require('./rutas/Ejemplos/Ejemplos');
 const ejemploProtegida = require('./rutas/Ejemplos/EjemploProtegida');
