@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
 
   if (!esValida) return res.status(400).json({ error: 'Contraseña incorrecta' });
 
-  const accessToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '1m' });
+  const accessToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '3h' });
   const refreshToken = jwt.sign({ id: usuario.id, rol: usuario.rol }, JWT_SECRET, { expiresIn: '7d' });
   const usuarioDatos = { ID: usuario.id, nombre: usuario.nombre }
   res.json({ Usuario: usuarioDatos, accessToken, refreshToken });
@@ -66,7 +66,7 @@ router.post('/refresh-token', async (req, res) => {
 
   try {
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const accessToken = jwt.sign({ id: decoded.id, rol: decoded.rol }, JWT_SECRET, { expiresIn: '1m' });
+    const accessToken = jwt.sign({ id: decoded.id, rol: decoded.rol }, JWT_SECRET, { expiresIn: '3h' });
     res.json({ accessToken });
   } catch (err) {
     return res.status(403).json({ error: 'Refresh token inválido o expirado' });
