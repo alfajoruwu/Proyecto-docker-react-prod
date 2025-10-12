@@ -17,22 +17,11 @@ const CrearSolucion = ({ }) => {
     const Navigate = useNavigate();
     const { mostrarToast } = useToast();
 
-    const { valorGlobal, setValorGlobal,
-        Logeado, SetLogedao,
-        Nombre, SetNombre,
-        Rol, SetRol,
-        topicosSeleccionados, setTopicosSeleccionados,
-        NombreEjercicio, SetNombreEjercicio, SetterNombreEjercicio,
-        ResumenEjercicio, SetResumenEjercicio, SetterResumenEjercicio,
-        ProblemaEjercicio, SetProblemaEjercicio, SetterProblemaEjercicio,
-        DificultadEjercicio, SetDificultadEjercicio, SetterDificultadEjercicio,
-        PermitirIAEjercicio, SetPermitirIAEjercicio, SetterPermitirIAEjercicio,
-        VerRespuestaEsperada, SetVerRespuestaEsperada, SetterVerRespuestaEsperada,
-        IDDBSeleccionadaEjercicio, IDSetDBSeleccionadaEjercicio, IDSetterDBSeleccionadaEjercicio,
-        SolucionEjercicio, SetSolucionEjercicio, SetterSolucionEjercicio,
-        ListaTopicosEjercicios, SetListaTopicosEjercicios, SetterListaTopicosEjercicios,
-        TablaSolucionEjercicio, SetTablaSolucionEjercicio, SetterTablaSolucionEjercicio,
-        ListaTopicosEjercicio, SetListaTopicosEjercicio, SetterListaTopicosEjercicio } = useContext(EstadoGlobalContexto)
+    const { ResumenEjercicio,
+        ProblemaEjercicio,
+        IDDBSeleccionadaEjercicio,
+        SetSolucionEjercicio,
+        SetTablaSolucionEjercicio } = useContext(EstadoGlobalContexto)
 
     const EjecutarSQL = () => {
         console.log('Ejecutar SQL', SQLEjecutar);
@@ -160,9 +149,7 @@ const CrearSolucion = ({ }) => {
             {/* Tablas disponibles en la DB - Diseño moderno */}
             <div className='ContenidoA p-4 rounded-lg shadow bg-base-200'>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                        <FaDatabase className="text-xl text-primary-content" />
-                    </div>
+
                     <h3 className="text-xl font-bold text-primary">Tablas Disponibles</h3>
                 </div>
 
@@ -184,12 +171,10 @@ const CrearSolucion = ({ }) => {
 
             {/* Contenedor para el editor de SQL - Diseño moderno */}
             <div className='ContenidoB p-4 rounded-lg shadow bg-base-200'>
-                <div className='h-[80%]'>
+                <div className='h-[70%]'>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
-                                <FaCode className="text-xl text-secondary-content" />
-                            </div>
+
                             <h3 className="text-xl font-bold text-secondary">Editor SQL</h3>
                         </div>
                         <button onClick={() => EjecutarSQL()} className='btn btn-secondary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
@@ -213,9 +198,7 @@ const CrearSolucion = ({ }) => {
             {/* Información del ejercicio - Diseño moderno */}
             <div className='ContenidoC p-4 rounded-lg shadow bg-base-200'>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
-                        <FaEye className="text-xl text-info-content" />
-                    </div>
+
                     <h3 className="text-xl font-bold text-info">Información del Ejercicio</h3>
                 </div>
 
@@ -259,9 +242,7 @@ const CrearSolucion = ({ }) => {
             <div className='ContenidoD p-4 rounded-lg shadow bg-base-200'>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
-                            <FaTable className="text-xl text-success-content" />
-                        </div>
+
                         <h3 className="text-xl font-bold text-success">Resultado de Ejecución</h3>
                     </div>
                     <div className='flex flex-row gap-3'>

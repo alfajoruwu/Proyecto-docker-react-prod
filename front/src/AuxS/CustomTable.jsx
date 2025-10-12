@@ -30,17 +30,17 @@ const CustomTable = ({ data = [], itemsPerPage = 5 }) => {
     }, [data, itemsPerPage]); // Solo dependemos de data e itemsPerPage
 
     return (
-        <div className="flex flex-col rounded-lg border border-base-300 bg-base-100 overflow-x-auto shadow-sm">
-            {/* Contenedor de la tabla con scroll lateral */}
-            <div className="overflow-x-auto rounded-sm">
-                <table className="table w-full rounded-sm">
+        <div className="flex flex-col bg-base-100 w-full">
+            {/* Contenedor de la tabla con scroll lateral en móviles */}
+            <div className="overflow-x-auto w-full">
+                <table className="table table-zebra w-full">
                     {/* Head */}
                     <thead className="bg-primary">
                         <tr>
                             {columns.map((col, index) => (
                                 <th
                                     key={index}
-                                    className={`p-2 font-medium text-primary-content ${index === 0 ? 'rounded-tl-lg' : ''
+                                    className={`p-2 sm:p-3 font-medium text-primary-content text-xs sm:text-sm whitespace-nowrap ${index === 0 ? 'rounded-tl-lg' : ''
                                         } ${index === columns.length - 1 ? 'rounded-tr-lg' : ''}`}
                                 >
                                     {col}
@@ -55,7 +55,7 @@ const CustomTable = ({ data = [], itemsPerPage = 5 }) => {
                             <tr>
                                 <td
                                     colSpan={columns.length}
-                                    className="p-8 text-center text-base-content/60"
+                                    className="text-center py-8 text-sm sm:text-base"
                                 >
                                     No hay datos disponibles para mostrar.
                                 </td>
@@ -66,7 +66,7 @@ const CustomTable = ({ data = [], itemsPerPage = 5 }) => {
                                     {columns.map((col, colIndex) => (
                                         <td
                                             key={colIndex}
-                                            className="whitespace-nowrap p-4"
+                                            className="p-2 sm:p-3 text-xs sm:text-sm"
                                         >
                                             {String(row[col])}
                                         </td>
@@ -80,8 +80,8 @@ const CustomTable = ({ data = [], itemsPerPage = 5 }) => {
 
             {/* Paginación */}
             {data.length > itemsPerPage && (
-                <div className="flex items-center justify-between p-4 border-t border-base-300 bg-base-100 rounded-b-lg">
-                    <div className="text-sm text-base-content/80">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 mt-4 px-2 sm:px-0">
+                    <div className="text-xs sm:text-sm text-center sm:text-left">
                         Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, data.length)} de {data.length} resultados
                     </div>
                     <div className="join">
@@ -92,7 +92,7 @@ const CustomTable = ({ data = [], itemsPerPage = 5 }) => {
                         >
                             «
                         </button>
-                        <button className="join-item btn btn-sm btn-disabled min-w-[80px]">
+                        <button className="join-item btn btn-sm">
                             Página {currentPage}
                         </button>
                         <button

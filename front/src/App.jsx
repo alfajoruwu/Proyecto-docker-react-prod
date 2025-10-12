@@ -14,6 +14,7 @@ import CrearEjercicio from './Vistas/CrearEjercicio/CrearEjercicio';
 import CrearSolucion from './Vistas/EjecucionSQL/CrearSolucion';
 import ProbarDB from './Vistas/EjecucionSQL/ProbarDB';
 import RealizarEjercicio from './Vistas/EjecucionSQL/RealizarEjercicio';
+import CrearSolucionv2 from './Vistas/EjecucionSQL/CrearSolucionv2';
 
 
 function App() {
@@ -41,7 +42,7 @@ function App() {
 
 
             {/* ejecucion de SQL */}
-            <Route path='/CrearSolucion' element={<CrearSolucion />} />
+            <Route path='/CrearSolucion' element={<CrearSolucionv2 />} />
             <Route path='/ProbarDB' element={<ProbarDB />} />
             <Route path='/RealizarEjercicio' element={<RealizarEjercicio />} />
 
