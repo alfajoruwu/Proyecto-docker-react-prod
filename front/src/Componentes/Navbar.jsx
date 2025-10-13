@@ -122,11 +122,7 @@ const Navbar = ({ MenuLateral = true }) => {
                     </div>
                 }
 
-                {Nombre == '' &&
-                    <button onClick={() => IrloginSimple()} className='btn btn-secondary'>
-                        Iniciar secion
-                    </button>
-                }
+
 
             </div >
 

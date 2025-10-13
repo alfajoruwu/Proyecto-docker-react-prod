@@ -78,7 +78,7 @@ router.post('/PromptA', authMiddleware, Verifica("usuario"), async (req, res) =>
             return res.status(500).json({ error: 'Error al obtener datos del ejercicio' });
         }
 
-        const Modelo = "qwen/qwen3-235b-a22b:free"
+        const Modelo = "meta-llama/llama-4-maverick:free"
 
         const Prompt = `
 <ROL>
