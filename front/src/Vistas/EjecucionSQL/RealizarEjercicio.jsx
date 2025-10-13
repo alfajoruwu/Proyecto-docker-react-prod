@@ -85,6 +85,8 @@ const RealizarEjercicio = ({ }) => {
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
                 mostrarToast('SQL Error: ' + error.response.data.detalle, 'error', 3000);
+                // Limpiar la tabla de resultados cuando hay error
+                SetTablasSQLResultado('');
                 // Registrar ejecución fallida
                 apiClient.post('/ejericicios/RegistrarEjecucionSQL', { ejercicioId: IdEjercicioResolver, sqlQuery: SQLEjecutar, resultado: 'Error: ' + error.response.data.detalle });
             });
@@ -206,6 +208,43 @@ const RealizarEjercicio = ({ }) => {
         SetCargandoRespuestaIA(event.target.value)
     }
 
+    const [tabActiva, setTabActiva] = useState('problema');
+
+    const [erroresExpandidos, setErroresExpandidos] = useState({});
+
+    // Función para parsear la respuesta de la IA y extraer los errores
+    const parsearErroresIA = (respuesta) => {
+        if (!respuesta) return [];
+
+        // Verificar si no hay errores
+        if (respuesta.toLowerCase().includes('no hay error') || respuesta.toLowerCase().includes('no se encontr')) {
+            return [];
+        }
+
+        const errores = [];
+        // Expresión regular para capturar errores numerados con su explicación
+        const regex = /(\d+)\.\s*([^:]+):\s*([^\n]+)\n\s*[-¿]\s*¿?Por qué es un error\?:?\s*([^\n]+(?:\n(?!\d+\.)[^\n]+)*)/gi;
+
+        let match;
+        while ((match = regex.exec(respuesta)) !== null) {
+            errores.push({
+                numero: match[1],
+                tipo: match[2].trim(),
+                descripcion: match[3].trim(),
+                explicacion: match[4].trim()
+            });
+        }
+
+        return errores;
+    };
+
+    const toggleError = (index) => {
+        setErroresExpandidos(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
+    };
+
     const ObtenerDatosEjercicio = () => {
         // Obtener los datos del ejercicio seleccionado
         console.log('ID del ejercicio a resolver:', IdEjercicioResolver);
@@ -286,13 +325,29 @@ const RealizarEjercicio = ({ }) => {
             return; // Detener la ejecución si algún valor está vacío
         }
 
+        // Convertir la tabla del estudiante a formato legible si existe
+        let tablaEstudianteFormateada = null;
+        if (TablasSQLResultado && Array.isArray(TablasSQLResultado) && TablasSQLResultado.length > 0) {
+            // Convertir el array de objetos a formato de tabla
+            tablaEstudianteFormateada = JSON.stringify(TablasSQLResultado, null, 2);
+        }
+
+        console.log('Enviando a IA:', {
+            contexto: DatosDB.sql_init,
+            problema: ProblemaEjercicio,
+            respuesta: SQLEjecutar,
+            ejercicioId: IdEjercicioResolver,
+            tablaEstudiante: tablaEstudianteFormateada
+        });
+
         SetCargandoRespuestaIA(true);
 
         apiClient.post('/IA/PromptA', {
             contexto: DatosDB.sql_init,
             problema: ProblemaEjercicio,
             respuesta: SQLEjecutar,
-            ejercicioId: IdEjercicioResolver
+            ejercicioId: IdEjercicioResolver,
+            tablaEstudiante: tablaEstudianteFormateada
         })
             .then(response => {
                 console.log('Respuesta ia:', response.data);
@@ -332,6 +387,15 @@ const RealizarEjercicio = ({ }) => {
             });
     };
 
+    const AbrirAyudaIA = () => {
+        document.getElementById('AyudaIA').showModal();
+
+    }
+
+    const CerrarAyudaIA = () => {
+        document.getElementById('AyudaIA').close();
+    }
+
 
     useEffect(() => {
         ObtenerDatosEjercicio();
@@ -341,189 +405,164 @@ const RealizarEjercicio = ({ }) => {
 
 
     return (
-        <div className='EjecutarSQL '>
-            <div className='Navbar'>
-                <Navbar />
-            </div>
+        <div>
+            <Navbar />
 
-
-            {/* Tablas disponibles en la DB - Diseño moderno */}
-            <div className='ContenidoA p-4 rounded-lg shadow bg-base-200'>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                        <FaDatabase className="text-xl text-primary-content" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">Tablas Disponibles</h3>
-                </div>
-
-                <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary w-full mb-2">
-
-                    {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
-                        <option key={index} value={tabla.tablename}>
-                            {tabla.tablename}
-                        </option>
-                    ))}
-                </select>
-
-                <CustomTable itemsPerPage={4} data={TablaInicial} />
-            </div>
-
-
-
-            {/* Contenedor para el editor de SQL - Diseño moderno */}
-            <div className='ContenidoB p-4 rounded-lg shadow bg-base-200'>
-                <div className='h-[80%]'>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
-                                <FaCode className="text-xl text-secondary-content" />
-                            </div>
-                            <h3 className="text-xl font-bold text-secondary">Editor SQL</h3>
-                        </div>
-                        <button onClick={() => EjecutarSQL()} className='btn btn-secondary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
-                            <FaPlay className="mr-2" />
-                            Ejecutar SQL
-                        </button>
-                    </div>
-                    <CodeMirror className='h-full'
-                        value={SQLEjecutar}
-                        placeholder={"SELECT * FROM tabla WHERE condicion;"}
-                        onChange={SetSQLEjecutar}
-                        height='100%'
-                        extensions={[sql()]}
-                    />
-                </div>
-            </div>
-
-
-
-            {/* Información del ejercicio - Diseño moderno */}
-            <div className="ContenidoC p-4 rounded-lg shadow bg-base-200">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
-                        <FaEye className="text-xl text-info-content" />
-                    </div>
-                    <h3 className="text-xl font-bold text-info">Información del Ejercicio</h3>
-                </div>
-
-                <div className="tabs tabs-lifted h-full overflow-scroll">
-                    {/* Pestaña: Problema */}
-                    <input defaultChecked type="radio" id="tab-problema" name="my_tabs_3" className="tab tab-lifted" aria-label="Problema" />
-                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6 max-h-[400px] overflow-y-auto">
-                        <div className="prose max-w-none">
-                            <h4 className="text-lg font-semibold text-accent mb-3">
-                                <FaLightbulb className="inline mr-2" />
-                                Problema a Resolver
-                            </h4>
-                            <ReactMarkdown>{ProblemaEjercicio}</ReactMarkdown>
-                        </div>
-                    </div>
-
-                    {/* Pestaña: Contexto DB */}
-                    <input type="radio" id="tab-contexto" name="my_tabs_3" className="tab tab-lifted" aria-label="Contexto DB" />
-                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6 max-h-[400px] overflow-y-auto">
-                        <div className="prose max-w-none">
-                            <h4 className="text-lg font-semibold text-accent mb-3">
-                                <FaDatabase className="inline mr-2" />
-                                Contexto de Base de Datos
-                            </h4>
-                            <ReactMarkdown>{DatosDB.descripcion}</ReactMarkdown>
-                        </div>
-                    </div>
-
-                    {/* Pestaña: Tabla esperada */}
-                    {MostrarTabla && (
-                        <>
-                            <input type="radio" id="tab-tabla" name="my_tabs_3" className="tab tab-lifted" aria-label="Tabla esperada" />
-                            <div className="tab-content bg-base-100 border-base-300 rounded-box p-6 max-h-[400px] overflow-y-auto">
-                                <div className="prose max-w-none">
-                                    <h4 className="text-lg font-semibold text-accent mb-3">
-                                        <FaTable className="inline mr-2" />
-                                        Tabla Esperada
-                                    </h4>
-                                    <CustomTable itemsPerPage={4} data={TablaSolucionEjercicio} />
+            <div className='flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-4rem)] gap-2 p-2'>
+                {/* Columna Izquierda */}
+                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
+                    {/* Tablas disponibles en la DB */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className='flex justify-between gap-2 mb-2 flex-shrink-0'>
+                            <h3 className="flex-1 text-xl font-bold text-primary">Tablas Disponibles</h3>
+                            <div className="flex-1">
+                                <div className="form-control">
+                                    <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary select-sm">
+                                        {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
+                                            <option key={index} value={tabla.tablename}>
+                                                {tabla.tablename}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
-                        </>
-                    )}
-
-                    {/* Pestaña: IA */}
-                    {MostrarIA && (
-                        <>
-                            <input type="radio" id="tab-ia" name="my_tabs_3" className="tab tab-lifted" aria-label="IA" />
-                            <div className="tab-content bg-base-100 border-base-300 rounded-box p-6 max-h-[400px] overflow-auto">
-                                <div className="prose max-w-none mb-4">
-                                    <h4 className="text-lg font-semibold text-accent mb-3">
-                                        <FaRobot className="inline mr-2" />
-                                        Asistente de IA
-                                    </h4>
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    {CargandoRespuestaIA ? (
-                                        <>
-                                            <button disabled className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
-                                            <button disabled className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => EnviarMensajeIA()} className="btn btn-primary sm:flex-1">Revisión de respuesta</button>
-                                            <button onClick={() => EnviarMensajeIA2()} className="btn btn-primary sm:flex-1">Ayuda paso a paso</button>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div className="flex-1 min-h-0 overflow-y-auto bg-base-200 shadow-lg p-4 rounded-lg mt-3">
-                                    {CargandoRespuestaIA && <span className="loading loading-spinner loading-md"></span>}
-                                    {!CargandoRespuestaIA && RespuestaIA && <ReactMarkdown>{RespuestaIA}</ReactMarkdown>}
-                                    {!CargandoRespuestaIA && !RespuestaIA && (
-                                        <p className="text-gray-500">respuesta de IA...</p>
-                                    )}
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Resultados de ejecución - Diseño moderno */}
-            <div className='ContenidoD p-4 rounded-lg shadow bg-base-200'>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
-                            <FaTable className="text-xl text-success-content" />
                         </div>
-                        <h3 className="text-xl font-bold text-success">Resultado de Ejecución</h3>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CustomTable itemsPerPage={10} data={TablaInicial} />
+                        </div>
                     </div>
-                    <div className='flex flex-row gap-3'>
-                        <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
-                            <FaTimes className="mr-2" />
-                            Salir
-                        </button>
-                        <button onClick={() => CrearRespuesta()} className='btn btn-primary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
-                            <FaCheckCircle className="mr-2" />
-                            Comprobar Respuesta
-                        </button>
+
+                    {/* Información del ejercicio con tabs */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Información del Ejercicio</h3>
+                        </div>
+
+                        <div className="flex-1 flex flex-col min-h-0">
+                            {/* Contenedor de tabs */}
+                            <div role="tablist" className="tabs tabs-boxed mb-2 flex-shrink-0 bg-base-200 flex-wrap">
+                                <button
+                                    className={`tab tab-sm sm:tab-md ${tabActiva === 'problema' ? 'tab-active' : ''}`}
+                                    onClick={() => setTabActiva('problema')}
+                                >
+                                    <FaLightbulb className="mr-1 hidden sm:inline" />
+                                    <span className="text-xs sm:text-sm">Problema</span>
+                                </button>
+                                <button
+                                    className={`tab tab-sm sm:tab-md ${tabActiva === 'contexto' ? 'tab-active' : ''}`}
+                                    onClick={() => setTabActiva('contexto')}
+                                >
+                                    <FaDatabase className="mr-1 hidden sm:inline" />
+                                    <span className="text-xs sm:text-sm">Contexto DB</span>
+                                </button>
+                                {MostrarTabla && (
+                                    <button
+                                        className={`tab tab-sm sm:tab-md ${tabActiva === 'tabla' ? 'tab-active' : ''}`}
+                                        onClick={() => setTabActiva('tabla')}
+                                    >
+                                        <FaTable className="mr-1 hidden sm:inline" />
+                                        <span className="text-xs sm:text-sm">Tabla Esperada</span>
+                                    </button>
+                                )}
+
+                            </div>
+
+                            {/* Contenido scrolleable */}
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 rounded-lg p-4 border border-base-300 min-h-0">
+                                {tabActiva === 'problema' && (
+                                    <div className="w-full">
+
+                                        <div className="leading-relaxed text-xs sm:text-sm break-words">
+                                            <ReactMarkdown>{ProblemaEjercicio}</ReactMarkdown>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {tabActiva === 'contexto' && (
+                                    <div className="w-full">
+
+                                        <div className="leading-relaxed text-xs sm:text-sm break-words">
+                                            <ReactMarkdown>{DatosDB.descripcion}</ReactMarkdown>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {tabActiva === 'tabla' && MostrarTabla && (
+                                    <div className="w-full">
+                                        <CustomTable itemsPerPage={10} data={TablaSolucionEjercicio} />
+                                    </div>
+                                )}
+
+
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
+
+                {/* Columna Derecha */}
+                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
+                    {/* Editor SQL */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Editor SQL</h3>
+
+                            <div className='flex flex-row gap-2'>
+                                <button className='btn btn-primary btn-sm shadow-lg' onClick={() => AbrirAyudaIA()}>
+                                    <FaLightbulb className="mr-1" />
+                                    Revisar IA
+                                </button>
+
+                                <button onClick={() => EjecutarSQL()} className='btn btn-secondary btn-sm shadow-lg'>
+                                    <FaPlay className="mr-1" />
+                                    <span className="hidden sm:inline">Ejecutar SQL</span>
+                                </button>
+                            </div>
+
+
+                        </div>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CodeMirror
+                                className='h-full'
+                                value={SQLEjecutar}
+                                placeholder={"SELECT * FROM tabla WHERE condicion;"}
+                                onChange={SetSQLEjecutar}
+                                height='100%'
+                                extensions={[sql()]}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Resultados de ejecución */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Resultado de Ejecución</h3>
+                            <div className='flex flex-row gap-2'>
+                                <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error btn-sm shadow-lg'>
+                                    <FaTimes className="mr-1" />
+                                    <span className="hidden sm:inline">Salir</span>
+                                </button>
+                                <button onClick={() => CrearRespuesta()} className='btn btn-primary btn-sm shadow-lg'>
+                                    <FaCheckCircle className="mr-1" />
+                                    <span className="hidden sm:inline">Comprobar</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-
-            {/* Pop up */}
-
+            {/* Pop up de respuesta correcta */}
             <dialog id="Respuesta_Correcta" className="modal">
                 <div className="modal-box flex flex-col gap-2 w-11/12 max-w-5xl">
-
-                    <h3 className="font-bold text-lg">Felicidades!! Completaste correctamente el ejercicio</h3>
-
+                    <h3 className="font-bold text-lg text-primary">Felicidades! Completaste correctamente el ejercicio</h3>
                     <p className="py-4">Tu respuesta fue correcta, puedes intentar resolver el ejercicio nuevamente o probar uno diferente.</p>
-
                     <div className='flex gap-3 flex-row'>
                         <button onClick={() => IrCrearEjercicio()} className="btn btn-primary">Volver al inicio</button>
                         <button onClick={() => CerrarPopUpCorrecto()} className="btn btn-secondary">Regresar al ejercicio</button>
                     </div>
-
-
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
@@ -531,7 +570,91 @@ const RealizarEjercicio = ({ }) => {
             </dialog>
 
 
-        </div >
+            <dialog id="AyudaIA" className="modal">
+                <div className="modal-box w-11/12 max-w-5xl">
+                    <h3 className="font-bold text-lg text-primary">Revisar respuesta con IA</h3>
+
+                    <p className="p-4 opacity-50">Esta es una ayuda que te mostrara tus errores sin decir la respuesta</p>
+
+                    <button onClick={() => EnviarMensajeIA()} className='btn btn-primary'>
+                        Revisar ahora
+                        <FaCheckCircle className="ml-1" />
+                    </button>
+
+                    {/* Mostrar en texto plano la respuesta de la ia */}
+
+                    {CargandoRespuestaIA ? (
+                        <div className="flex items-center justify-center mt-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                            <span className="ml-2">Cargando respuesta de IA...</span>
+                        </div>
+                    ) : (
+                        RespuestaIA && (() => {
+                            const errores = parsearErroresIA(RespuestaIA);
+
+                            if (errores.length === 0) {
+                                return (
+                                    <div className="mt-4 p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <FaCheckCircle className="text-3xl " />
+                                            <div>
+                                                <h4 className="font-bold text-lg ">¡Excelente trabajo!</h4>
+                                                <p className="text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="mt-4 space-y-3">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <FaLightbulb className="text-warning text-xl" />
+                                        <h4 className="font-bold text-lg">Errores identificados: {errores.length}</h4>
+                                    </div>
+
+                                    {errores.map((error, index) => (
+                                        <div
+                                            key={index}
+                                            className="collapse collapse-arrow bg-base-200 border border-base-300 shadow-md hover:shadow-lg transition-all"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={erroresExpandidos[index] || false}
+                                                onChange={() => toggleError(index)}
+                                            />
+                                            <div className="collapse-title font-medium flex items-start gap-3">
+                                                <span className="badge badge-error badge-lg">{error.numero}</span>
+                                                <div className="flex-1">
+                                                    <span className="font-bold text-error">{error.tipo}</span>
+                                                    <p className="text-sm opacity-80 mt-1">{error.descripcion}</p>
+                                                </div>
+                                            </div>
+                                            <div className="collapse-content bg-base-100">
+                                                <div className="pt-4 pl-2 border-l-4 border-warning">
+                                                    <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                                        <FaLightbulb className="text-warning" />
+                                                        ¿Por qué es un error?
+                                                    </p>
+                                                    <p className="text-sm leading-relaxed">{error.explicacion}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()
+                    )}
+
+
+
+                    <div className="modal-action">
+                        <button onClick={() => CerrarAyudaIA()} className='btn btn-primary'>Minimizar</button>
+                    </div>
+                </div>
+            </dialog>
+
+        </div>
     )
 }
 

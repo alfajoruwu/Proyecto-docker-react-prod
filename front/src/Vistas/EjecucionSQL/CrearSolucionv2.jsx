@@ -171,7 +171,7 @@ const CrearSolucionv2 = () => {
                                 </div>
                             </div>
                             <div className='flex-1 overflow-auto min-h-0'>
-                                <CustomTable itemsPerPage={4} data={TablaInicial} />
+                                <CustomTable itemsPerPage={10} data={TablaInicial} />
                             </div>
                         </div>
                     </div>
@@ -297,7 +297,7 @@ const CrearSolucionv2 = () => {
 
                         {/* Contenedor con scroll interno */}
                         <div className='flex-1 overflow-auto min-h-0'>
-                            <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
+                            <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
                         </div>
                     </div>
                 </div>

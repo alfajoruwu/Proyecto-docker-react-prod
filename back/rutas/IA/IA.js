@@ -50,237 +50,340 @@ router.post('/ejemplo-consulta', async (req, res) => {
 router.post('/PromptA', authMiddleware, Verifica("usuario"), async (req, res) => {
     try {
 
-        const { contexto, problema, respuesta, ejercicioId } = req.body;
+        const { contexto, problema, respuesta, ejercicioId, tablaEstudiante } = req.body;
 
-        const Modelo = "deepseek/deepseek-chat-v3-0324:free"
+        // Validar que ejercicioId esté presente
+        if (!ejercicioId) {
+            return res.status(400).json({ error: 'El ID del ejercicio es obligatorio' });
+        }
+
+        // Consultar la respuesta correcta y tabla esperada desde la base de datos
+        let respuestaCorrecta = '';
+        let tablaEsperada = '';
+
+        try {
+            const ejercicioQuery = await pool.query(
+                'SELECT sql_solucion, tabla_solucion FROM Ejercicios WHERE id = $1',
+                [ejercicioId]
+            );
+
+            if (ejercicioQuery.rows.length === 0) {
+                return res.status(404).json({ error: 'Ejercicio no encontrado' });
+            }
+
+            respuestaCorrecta = ejercicioQuery.rows[0].sql_solucion || '';
+            tablaEsperada = ejercicioQuery.rows[0].tabla_solucion || '';
+        } catch (dbError) {
+            console.error('❌ Error al consultar datos del ejercicio:', dbError.message);
+            return res.status(500).json({ error: 'Error al obtener datos del ejercicio' });
+        }
+
+        const Modelo = "qwen/qwen3-235b-a22b:free"
 
         const Prompt = `
-
 <ROL>
-Tu tarea es revisar las respuestas de estudiantes de bases de datos, estos practican el lenguaje SQL. tienes el contexto de la base de datos, el problema y la respuesta del estudiante. tienes que revisar si la respuesta es incorrecta o correcta, si es incorrecta tienes que identificar los errores.
+   Tu tarea es revisar las respuestas de estudiantes de bases de datos, estos practican el lenguaje SQL. tienes el contexto de la base de datos, el problema y la respuesta del estudiante. tienes que revisar si la respuesta es incorrecta o correcta, si es incorrecta tienes que identificar los errores.
 </ROL>
 
 <Contexto>
-Al evaluar consultas SQL, clasifica los posibles resultados en las siguientes categorías:
+   Al evaluar consultas SQL, clasifica los posibles resultados en las siguientes categorías:
 
-1. **Respuesta Correcta**
-   - Descripción: La consulta cumple con el objetivo solicitado.
-   - Resultado: Genera la tabla esperada y con datos correctos.
-   - Mensaje estándar: "✅ No hay error encontrado."
+   1. **Respuesta Correcta**
+      - Descripción: La consulta cumple con el objetivo solicitado.
+      - Resultado: Genera la tabla esperada y con datos correctos.
 
-2. **Error de Sintaxis**
-   - Descripción: La consulta no se ejecuta correctamente debido a errores en la escritura (palabras clave mal escritas, falta de comas, puntos y comas innecesarios, uso incorrecto de paréntesis, etc.).
-   - Efecto: No genera ninguna tabla de resultados.
-   - Ejemplo: "SELEC name FROM users" (error en "SELEC").
+   2. **Error de Sintaxis**
+      - Descripción: La consulta no se ejecuta correctamente debido a errores en la escritura (palabras clave mal escritas, falta de comas, puntos y comas innecesarios, uso incorrecto de paréntesis, etc.).
+      - Resultado: No genera ninguna tabla de resultados.
+      - Ejemplo: 'SELEC name FROM users' (error en 'SELEC').
 
-3. **Error Lógico**
-   - Descripción: La consulta se ejecuta sin errores de sintaxis, pero devuelve datos incorrectos o no resuelve el problema planteado.
-   - Efecto: Genera una tabla, pero con resultados erróneos.
-   - Ejemplo: Usar ">" en lugar de "<" al filtrar salarios bajos.
+   3. **Error Lógico**
+      - Descripción: La consulta se ejecuta sin errores de sintaxis, pero devuelve datos incorrectos o no resuelve el problema planteado.
+      - Resultado: Genera una tabla, pero con resultados erróneos.
+      - Ejemplo: Usar '> ' en lugar de ' < ' al filtrar.
 
-> Nota: Una consulta puede contener **más de un tipo de error**. Evalúa cuidadosamente cada parte de la consulta antes de emitir el diagnóstico final.
+   4. **Errores conceptuales**
+      - Descripción: La consulta es funcional y devuelve los datos correctos, pero incluye pasos, funciones o tablas innecesarias que no eran parte del requerimiento original.
+      - Resultado: Aunque el resultado es correcto, la solución no es óptima ni precisa.
+      - Ejemplo: Usar 'ORDER BY' cuando no se pide ordenar, o realizar 'JOIN' con tablas irrelevantes.
+
+   NOTA IMPORTANTE: No fijarse en formas alternativas de llegar al mismo resultado. (formas implicitas o explicitas no son errores)
+   Nota: Una consulta puede contener **UNO o mas de un tipo de error**. Evalúa cuidadosamente cada parte de la consulta antes de emitir el diagnóstico final.
+
 </Contexto>
 
-<Formato>
-Problema: [Breve descripción del objetivo]
-Consulta del estudiante:
-SELECT ...
+<FormatoRespuesta>
+   NOTA: Tienes que responder en el formato SIN DAR LA RESPUESTA o CODIGO SQL:
 
-Tienes que responder en el formato de:
-Errores identificados:
-    [Tipo de error]: [Breve descripción del error]
-        ¿Por qué es un error? [Explicación educativa]
-        Solución: [Consulta corregida]
-</Formato>
+   Errores identificados:
+      [N.Tipo de error]: [Breve descripción del error]
+         ¿Por qué es un error? [Explicación educativa]
 
-<Ejemplos>
+      [N+1.Tipo de error]: [Breve descripción del error]
+         ¿Por qué es un error? [Explicación educativa]
 
-<Base de ejemplo>
-CREATE TABLE autores (
-    autor_id INT PRIMARY KEY,
-    nombre VARCHAR(100)
-);
+</FormatoRespuesta>
 
-CREATE TABLE libros (
-    libro_id INT PRIMARY KEY,
-    titulo VARCHAR(200),
-    autor_id INT,
-    genero VARCHAR(50),
-    FOREIGN KEY (autor_id) REFERENCES autores(autor_id)
-);
+<BaseDeDatosDeEjemplo>
+   CREATE TABLE autores (
+      autor_id INT PRIMARY KEY,
+      nombre VARCHAR(100)
+   );
 
-CREATE TABLE ventas (
-    venta_id INT PRIMARY KEY,
-    libro_id INT,
-    cantidad INT,
-    fecha_venta DATE,
-    FOREIGN KEY (libro_id) REFERENCES libros(libro_id)
-);
+   CREATE TABLE libros (
+      libro_id INT PRIMARY KEY,
+      titulo VARCHAR(200),
+      autor_id INT,
+      genero VARCHAR(50),
+      FOREIGN KEY (autor_id) REFERENCES autores(autor_id)
+   );
 
-INSERT INTO autores VALUES
-(1, 'Gabriel García Márquez'),
-(2, 'Isabel Allende'),
-(3, 'Stephen King');
+   CREATE TABLE ventas (
+      venta_id INT PRIMARY KEY,
+      libro_id INT,
+      cantidad INT,
+      fecha_venta DATE,
+      FOREIGN KEY (libro_id) REFERENCES libros(libro_id)
+   );
 
-INSERT INTO libros VALUES
-(1, 'Cien años de soledad', 1, 'Realismo Mágico'),
-(2, 'La casa de los espíritus', 2, 'Realismo Mágico'),
-(3, 'It', 3, 'Terror'),
-(4, 'El rey pálido', 3, 'Ficción');
+   INSERT INTO autores VALUES
+   (1, 'Gabriel García Márquez'),
+   (2, 'Isabel Allende'),
+   (3, 'Stephen King');
 
-INSERT INTO ventas VALUES
-(1, 1, 5, '2023-10-01'),
-(2, 2, 3, '2023-10-01'),
-(3, 3, 10, '2023-10-02'),
-(4, 1, 2, '2023-10-03'),
-(5, 4, 7, '2023-10-03');
-</base de ejemplo>
+   INSERT INTO libros VALUES
+   (1, 'Cien años de soledad', 1, 'Realismo Mágico'),
+   (2, 'La casa de los espíritus', 2, 'Realismo Mágico'),
+   (3, 'It', 3, 'Terror'),
+   (4, 'El rey pálido', 3, 'Ficción');
 
-<Ejemplo1>
-Listar el total de ventas por autor, incluyendo solo aquellos autores cuyo género principal sea "Realismo Mágico".
+   INSERT INTO ventas VALUES
+   (1, 1, 5, '2023-10-01'),
+   (2, 2, 3, '2023-10-01'),
+   (3, 3, 10, '2023-10-02'),
+   (4, 1, 2, '2023-10-03'),
+   (5, 4, 7, '2023-10-03');
+</BaseDeDatosDeEjemplo>
 
-Consulta del estudiante:
-SELECT a.nombre, SUM(v.cantidad) AS total_ventas
-FROM autores a
-JOIN libros l ON a.autor_id = l.autor_id
-JOIN ventas v ON l.libro_id = v.libro_id
-WHERE l.genero = 'Realismo Mágico'
-GROUP BY a.autor_id;
+<Ejemplo_1>
 
-Errores identificados:
-1. Sintaxis: Falta incluir a.nombre en GROUP BY.
-   - ¿Por qué es un error? Todos los campos no agregados en SELECT deben estar en GROUP BY.
-   - Solución:
-     GROUP BY a.autor_id, a.nombre;
+   -- Contexto -- 
+   Base de datos de ejemplo
 
-Tabla esperada
-| nombre                  | total_ventas |
-|-------------------------|--------------|
-| Gabriel García Márquez  | 7            |
-| Isabel Allende          | 3            |
+   -- Enunciado --   
+   Listar el total de ventas por autor para libros del género "Realismo Mágico", incluyendo solo autores con más de 5 ventas totales.
 
+   -- Respuesta correcta --
+   SELECT a.nombre AS autor, SUM(v.cantidad) AS total_ventas
+   FROM autores a
+   INNER JOIN libros l ON a.autor_id = l.autor_id
+   INNER JOIN ventas v ON l.libro_id = v.libro_id
+   WHERE l.genero = 'Realismo Mágico'
+   GROUP BY a.autor_id, a.nombre
+   HAVING SUM(v.cantidad) > 5;
 
-Tabla obtenida
-Error de sintaxis (no genera tabla):
+   -- Tabla esperada --
+   | nombre                  | total_ventas |
+   |-------------------------|--------------|
+   | Gabriel García Márquez  | 7            |
+
+   -- Consulta del estudiante --
+   SELECT a.autor_id, SUM(v.cantidad) AS total_ventas
+   FROM autores a
+   JOIN libros l ON a.autor_id = l.autor_id
+   JOIN ventas v ON l.libro_id = v.libro_id
+   WHERE l.genero = 'Realismo Mágico' AND SUM(v.cantidad) < 5
+   GROUP BY a.autor_id;
+
+   -- Tabla generada por el estudiante --
+   Error de sintaxis (no genera tabla):
+
+   <RespuestaEsperadaDelLLM>
+
+      Errores identificados:
+      1. logico: Uso incorrecto de operador mayor que.
+         - ¿Por que es un error? La consulta filtra con SUM(v.cantidad) < 5, pero el requisito es incluir autores con más de 5 ventas totales.
+
+      2. Sintaxis: Uso incorrecto de SUM en WHERE.
+         - ¿Por qué es un error? Las funciones de agregación como SUM no pueden usarse directamente en la cláusula WHERE porque esta se evalúa antes de agrupar los datos. La solución es usar la cláusula HAVING para filtrar resultados después de la agregación.  
+      
+   </RespuestaEsperadaDelLLM>
+
 </Ejemplo1>
 
+
 <Ejemplo2>
-Listar el total de ventas por autor para libros del género "Realismo Mágico", incluyendo solo autores con más de 5 ventas totales.
 
-Consulta del estudiante:
-SELECT a.autor_id, SUM(v.cantidad) AS total_ventas
-FROM autores a
-JOIN libros l ON a.autor_id = l.autor_id
-JOIN ventas v ON l.libro_id = v.libro_id
-WHERE l.genero = 'Realismo Mágico' AND SUM(v.cantidad) < 5
-GROUP BY a.autor_id;
+   -- Contexto -- 
+   Base de datos de ejemplo
 
-Errores identificados:
-1 logico: Uso incorrecto de operador mayor que.
-   - ¿Por que es un error? Esta realizando la comparacion mal.
-   - Solucion: cambiar < por >
+   -- Enunciado --   
+   Contar ventas por autor en libros del género "Realismo Mágico".
 
-2. Sintaxis: Uso incorrecto de SUM en WHERE.
-   - ¿Por qué es un error? WHERE se evalúa antes de agrupar, por lo que SUM no existe en esa etapa.
-   - Solución:
-     HAVING SUM(v.cantidad) > 5
+   -- Respuesta correcta --
+   SELECT a.nombre AS autor, COUNT(*) AS numero_de_ventas
+   FROM autores a
+   INNER JOIN libros l ON a.autor_id = l.autor_id
+   INNER JOIN ventas v ON l.libro_id = v.libro_id
+   WHERE l.genero = 'Realismo Mágico'
+   GROUP BY a.autor_id, a.nombre;
 
-3. Lógico: a.autor_id en SELECT sin claridad para el estudiante.
-   - Solución:
-     SELECT a.nombre, SUM(v.cantidad) AS total_ventas
+   -- Tabla esperada --
+   | nombre                  | total_ventas |
+   |-------------------------|--------------|
+   | Gabriel García Márquez  | 2            |
+   | Isabel Allende          | 1            |
 
-Tabla esperada:
-| nombre                  | total_ventas |
-|-------------------------|--------------|
-| Gabriel García Márquez  | 7            |
 
-Tabla generada por el estudiante:
-Error de sintaxis (no genera tabla):
+   -- Consulta del estudiante --
+   SELECT a.nombre, COUNT(v.venta_id) AS total_ventas
+   FROM autores a
+   JOIN libros l ON a.autor_id = l.autor_id
+   JOIN ventas v ON l.libro_id = v.libro_id
+   GROUP BY a.autor_id;
+
+   -- Tabla generada por el estudiante --
+   | nombre                  | COUNT(v.venta_id) |
+   |-------------------------|-------------------|
+   | Gabriel García Márquez  | 2                 |
+   | Isabel Allende          | 1                 |
+   | Stephen King            | 2                 |
+
+
+   <RespuestaEsperadaDelLLM>
+
+      Errores identificados:
+      1. Lógico: Falta filtro por género. (uso de WHERE)
+         - ¿Por qué es un error? Incluye libros de otros géneros (ej: terror, ficción).
+
+      2. Lógico: Falta incluir a.nombre en GROUP BY.
+         - ¿Por qué es un error? a.nombre no está en GROUP BY, Debido a que se usa en la consulta tiene que estar asignado.
+
+   </RespuestaEsperadaDelLLM>
 
 </Ejemplo2>
 
 
 <Ejemplo3>
-Contar ventas por autor en "Realismo Mágico".
 
-Consulta del estudiante:
-SELECT a.nombre, COUNT(v.venta_id)
-FROM autores a
-JOIN libros l ON a.autor_id = l.autor_id
-GROUP BY a.autor_id;
+   -- Contexto -- 
+   Base de datos de ejemplo
 
-Errores identificados:
-1. Lógico: Falta filtro por género.
-   - ¿Por qué es un error? Incluye libros de otros géneros (ej: terror, ficción).
-   - Solución:
-     WHERE l.genero = 'Realismo Mágico'
+   -- Enunciado --   
+   Cuenta por autor todas las ventas de libros de realismo magico
+
+   -- Respuesta correcta --
+   SELECT a.nombre, SUM(v.cantidad) AS total_ventas
+   FROM autores a
+   JOIN libros l ON a.autor_id = l.autor_id
+   JOIN ventas v ON l.libro_id = v.libro_id
+   WHERE l.genero = 'Realismo Mágico'
+   GROUP BY a.autor_id, a.nombre;
+
+   -- Tabla esperada --
+   | nombre                  | total_ventas |
+   |-------------------------|--------------|
+   | Gabriel García Márquez  | 7            |
+   | Isabel Allende          | 3            |
+   
+
+   -- Consulta del estudiante --
+   SELECT a.nombre AS autor, SUM(v.cantidad) AS total_ventas
+   FROM autores a, libros l, ventas v
+   WHERE a.autor_id = l.autor_id
+   AND l.libro_id = v.libro_id
+   AND l.genero = 'Realismo Mágico'
+   GROUP BY a.autor_id, a.nombre;
 
 
-2. Lógico: Falta a.nombre en GROUP BY.
-   - ¿Por qué es un error? a.nombre no está en GROUP BY ni es función de agregación.
-   - Solución:
-     GROUP BY a.autor_id, a.nombre;
+   -- Tabla generada por el estudiante --
+   | nombre                  | total_ventas |
+   |-------------------------|--------------|
+   | Gabriel García Márquez  | 7            |
+   | Isabel Allende          | 3            |
 
-Tabla esperada:
-| nombre                  | total_ventas |
-|-------------------------|--------------|
-| Gabriel García Márquez  | 2            |
-| Isabel Allende          | 1            |
-
-Tabla generada por el estudiante:
-| nombre                  | COUNT(v.venta_id) |
-|-------------------------|-------------------|
-| Gabriel García Márquez  | 2                 |
-| Isabel Allende          | 1                 |
-| Stephen King            | 2                 |
+   <RespuestaEsperadaDelLLM>   
+      No hay error encontrado.
+   </RespuestaEsperadaDelLLM>
 
 </Ejemplo3>
 
 
 <Ejemplo4>
 
-Cuenta por autor todas las ventas de libros de realismo magico
+   -- Contexto -- 
+   Base de datos de ejemplo
 
-Consulta del estudiante:
-SELECT a.nombre, SUM(v.cantidad) AS total_ventas
-FROM autores a
-JOIN libros l ON a.autor_id = l.autor_id
-JOIN ventas v ON l.libro_id = v.libro_id
-WHERE l.genero = 'Realismo Mágico'
-GROUP BY a.autor_id, a.nombre;
+   -- Enunciado --   
+   Listar todos los autores con sus IDs y nombres
 
-- No hay error encontrado.
-  - Justificación: La consulta incluye filtros correctos y agrupa por todos los campos no agregados.
+   -- Respuesta correcta --
+   SELECT autor_id, nombre
+   FROM autores;
 
-Tabla esperada:
-| nombre                  | total_ventas |
-|-------------------------|--------------|
-| Gabriel García Márquez  | 7            |
-| Isabel Allende          | 3            |
+   -- Tabla esperada --
+   | AUTOR_ID | Nombre                  |
+   |----------|-------------------------|
+   |  1       | Gabriel García Márquez  |
+   |  2       | Isabel Allende          |
+   |  3       | Stephen King            |
+   
+   
+   -- Consulta del estudiante --
+   SELECT DISTINCT a.autor_id, a.nombre
+   FROM autores a 
+   JOIN libros l ON a.autor_id = l.autor_id
+   ORDER BY a.autor_id DESC;
 
-Tabla generada por el estudiante:
-| nombre                  | total_ventas |
-|-------------------------|--------------|
-| Gabriel García Márquez  | 7            |
-| Isabel Allende          | 3            |
 
+   -- Tabla del estudiante --
+   | AUTOR_ID | Nombre                  |
+   |----------|-------------------------|
+   |  1       | Gabriel García Márquez  |
+   |  2       | Isabel Allende          |
+   |  3       | Stephen King            |
+
+   
+   <RespuestaEsperadaDelLLM> 
+      1. Error conceptual: Uso innecesario de JOIN con la tabla libros.
+         - ¿Por qué es un error?:  La tabla libros no es necesaria para obtener los campos solicitados (autor_id y nombre están en la tabla autores).
+
+      2. Error conceptual: Uso innecesario de DISTINCT.
+         - ¿Por qué es un error?:  La tabla autores tiene autor_id como clave primaria, por lo que no hay duplicados en los resultados.
+
+      3. Error conceptual: Uso innecesario de ORDER BY.
+         - ¿Por qué es un error?:  El enunciado no solicita ordenar los resultados.
+   </RespuestaEsperadaDelLLM>
+   
 </Ejemplo4>
 
 <Consideraciones>
-- No te fijes en el formato del texto entregado; asume que está organizado para la vista del estudiante.
-- Respeta siempre el formato establecido.
-- Habla únicamente en español.
-- Sé conciso y claro: menos es más.
+   - No te fijes en el formato del texto entregado; asume que está organizado para la vista del estudiante.
+   - Respeta siempre el formato establecido.
+   - Habla únicamente en español.
+   - Sé conciso y claro.
+   - No incluyas las tablas en tu respuesta, solo son guias para tu analisis
 </Consideraciones>
 
-Contexto de la base de datos:
+-- Contexto --
 ${contexto}
 
-Problema
+-- Enunciado --
 ${problema}
 
-Respuesta estudiante
+-- Respuesta correcta --
+${respuestaCorrecta}
+
+-- Tabla esperada --
+${tablaEsperada}
+
+-- Respuesta estudiante -- 
 ${respuesta}
+
+-- Tabla generada por el estudiante --
+${tablaEstudiante || '(no genera tabla)'}
+
+
 `;
 
         const idUsuario = req.user?.id || 'anonimo';
@@ -297,7 +400,23 @@ ${respuesta}
             });
         }
 
-        const respuestaIA = resultado.choices[0].message.content.trim();
+        let respuestaIA = resultado.choices[0].message.content.trim();
+
+        // Limpieza de respuesta (casos excepcionales)
+        // Eliminar tags de pensamiento interno que algunos modelos generan
+        const patronThinking = /<\/?(?:think|thinking|reason|reasoning|chain|cot|step|process|thought|internal|reflection)[^>]*>[\s\S]*?<\/(?:think|thinking|reason|reasoning|chain|cot|step|process|thought|internal|reflection)>/gi;
+        respuestaIA = respuestaIA.replace(patronThinking, '');
+
+        // Eliminar tags sueltos que no se cerraron correctamente
+        const patronTagSuelto = /<\/?(?:think|thinking|reason|reasoning|chain|cot|step|process|thought|internal|reflection)[^>]*>/gi;
+        respuestaIA = respuestaIA.replace(patronTagSuelto, '');
+
+        // Normalizar múltiples líneas vacías a máximo 2
+        respuestaIA = respuestaIA.replace(/\n\s*\n\s*\n+/g, '\n\n');
+
+        // Eliminar espacios en blanco al inicio y final
+        respuestaIA = respuestaIA.trim();
+        // Fin limpieza
 
         // Registrar la consulta IA en la base de datos
         try {

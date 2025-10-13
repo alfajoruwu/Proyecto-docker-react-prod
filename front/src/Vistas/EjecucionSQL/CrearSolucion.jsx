@@ -165,7 +165,7 @@ const CrearSolucion = ({ }) => {
                         </select>
                     </div>
 
-                    <CustomTable itemsPerPage={4} data={TablaInicial} />
+                    <CustomTable itemsPerPage={10} data={TablaInicial} />
                 </div>
             </div>
 
@@ -257,7 +257,7 @@ const CrearSolucion = ({ }) => {
                     </div>
                 </div>
 
-                <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
+                <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
             </div>
 
         </div >

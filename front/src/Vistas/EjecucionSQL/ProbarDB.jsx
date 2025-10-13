@@ -153,106 +153,86 @@ const ProbarDB = ({ }) => {
 
 
     return (
-        <div className='EjecutarSQL '>
-            <div className='Navbar'>
-                <Navbar />
-            </div>
+        <div>
+            <Navbar />
 
-            {/* Tablas disponibles en la DB - Diseño moderno */}
-            <div className='ContenidoA p-4 rounded-lg shadow bg-base-200'>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                        <FaDatabase className="text-xl text-primary-content" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">Explorar Base de Datos</h3>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="form-control">
-                        <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary w-full">
-
-                            {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
-                                <option key={index} value={tabla.tablename}>
-                                    {tabla.tablename}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <CustomTable itemsPerPage={4} data={TablaInicial} />
-                </div>
-            </div>
-
-            {/* Contenedor para el editor de SQL - Diseño moderno */}
-            <div className='ContenidoB p-4 rounded-lg shadow bg-base-200'>
-                <div className='h-[80%]'>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
-                                <FaCode className="text-xl text-secondary-content" />
+            <div className='flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-4rem)] gap-2 p-2'>
+                {/* Columna Izquierda */}
+                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
+                    {/* Tablas disponibles en la DB */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className='flex justify-between gap-2 mb-2 flex-shrink-0'>
+                            <h3 className="flex-1 text-xl font-bold text-primary">Explorar Base de Datos</h3>
+                            <div className="flex-1">
+                                <div className="form-control">
+                                    <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary select-sm">
+                                        {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
+                                            <option key={index} value={tabla.tablename}>
+                                                {tabla.tablename}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-secondary">Probar Consultas SQL</h3>
                         </div>
-                        <button onClick={() => EjecutarSQL()} className='btn btn-secondary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
-                            <FaPlay className="mr-2" />
-                            Ejecutar SQL
-                        </button>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CustomTable itemsPerPage={10} data={TablaInicial} />
+                        </div>
                     </div>
 
-                    <CodeMirror className='h-full'
-                        value={SQLEjecutar}
-                        placeholder={"SELECT * FROM tabla WHERE condicion;"}
-                        onChange={SetSQLEjecutar}
-                        height='100%'
-                        extensions={[sql()]}
-                    />
-                </div>
-            </div>
-
-
-
-            {/* Contexto de la DB - Diseño moderno */}
-            <div className='ContenidoC p-4 rounded-lg shadow bg-base-200'>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-info rounded-xl flex items-center justify-center">
-                        <FaEye className="text-xl text-info-content" />
-                    </div>
-                    <h3 className="text-xl font-bold text-info">Contexto de Base de Datos</h3>
-                </div>
-
-                <div className="tabs tabs-lifted h-full overflow-scroll">
-                    <input defaultChecked type="radio" name="my_tabs_3" className="tab tab-lifted" aria-label="Contexto DB" />
-                    <div className="tab-content bg-base-100 border-base-300 rounded-box p-6">
-                        <div className="prose max-w-none">
-                            <h4 className="text-lg font-semibold text-accent mb-3">
-                                <FaDatabase className="inline mr-2" />
-                                Descripción de la Base de Datos
+                    {/* Contexto de la DB */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Contexto de Base de Datos</h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 rounded-lg p-4 border border-base-300 min-h-0">
+                            <h4 className="text-base sm:text-lg font-semibold text-accent mb-3 flex items-center">
+                                <FaDatabase className="mr-2 flex-shrink-0" />
+                                <span>Descripción de la Base de Datos</span>
                             </h4>
-                            <p className="leading-relaxed">{DatosDB.descripcion}</p>
+                            <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">{DatosDB.descripcion}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Columna Derecha */}
+                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
+                    {/* Editor SQL */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Probar Consultas SQL</h3>
+                            <button onClick={() => EjecutarSQL()} className='btn btn-secondary btn-sm shadow-lg'>
+                                <FaPlay className="mr-1" />
+                                <span className="hidden sm:inline">Ejecutar SQL</span>
+                            </button>
+                        </div>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CodeMirror
+                                value={SQLEjecutar}
+                                placeholder={"SELECT * FROM tabla WHERE condicion;"}
+                                onChange={SetSQLEjecutar}
+                                height='100%'
+                                extensions={[sql()]}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Resultados de ejecución */}
+                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                            <h3 className="text-xl font-bold text-primary">Resultado de Consulta</h3>
+                            <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-primary btn-sm shadow-lg'>
+                                <FaArrowLeft className="mr-1" />
+                                <span className="hidden sm:inline">Volver al Menú</span>
+                            </button>
+                        </div>
+                        <div className='flex-1 overflow-auto min-h-0'>
+                            <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
                         </div>
                     </div>
                 </div>
             </div>
-
-            {/* Resultados de ejecución - Diseño moderno */}
-            <div className='ContenidoD p-4 rounded-lg shadow bg-base-200'>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
-                            <FaTable className="text-xl text-success-content" />
-                        </div>
-                        <h3 className="text-xl font-bold text-success">Resultado de Consulta</h3>
-                    </div>
-                    <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-primary shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300'>
-                        <FaArrowLeft className="mr-2" />
-                        Volver al Menú
-                    </button>
-                </div>
-
-                <CustomTable itemsPerPage={4} data={TablasSQLResultado} />
-            </div>
-
-        </div >
+        </div>
     )
 }
 
