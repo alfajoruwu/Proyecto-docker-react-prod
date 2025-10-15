@@ -216,14 +216,22 @@ const RealizarEjercicio = ({ }) => {
     const parsearErroresIA = (respuesta) => {
         if (!respuesta) return [];
 
-        // Verificar si no hay errores
-        if (respuesta.toLowerCase().includes('no hay error') || respuesta.toLowerCase().includes('no se encontr')) {
+        // Verificar si explícitamente dice que no hay errores
+        if (respuesta.toLowerCase().includes('no hay error encontrado') ||
+            respuesta.toLowerCase().includes('no se encontró ningún error')) {
             return [];
         }
 
         const errores = [];
-        // Expresión regular para capturar errores numerados con su explicación
-        const regex = /(\d+)\.\s*([^:]+):\s*([^\n]+)\n\s*[-¿]\s*¿?Por qué es un error\?:?\s*([^\n]+(?:\n(?!\d+\.)[^\n]+)*)/gi;
+
+        // Patrón flexible que captura TODO lo que está entre el número y los dos puntos
+        // Ejemplos que captura:
+        // - "1. Lógico:"
+        // - "1. Error Lógico:"
+        // - "1. Error de Sintaxis:"
+        // - "1. Sintaxis:"
+        // - "1. Conceptual:"
+        const regex = /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*[-–—]\s*¿?Por\s*qué\s*es\s*un\s*error\??:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi;
 
         let match;
         while ((match = regex.exec(respuesta)) !== null) {
@@ -231,7 +239,7 @@ const RealizarEjercicio = ({ }) => {
                 numero: match[1],
                 tipo: match[2].trim(),
                 descripcion: match[3].trim(),
-                explicacion: match[4].trim()
+                explicacion: match[4].trim().replace(/\s+/g, ' ')
             });
         }
 
