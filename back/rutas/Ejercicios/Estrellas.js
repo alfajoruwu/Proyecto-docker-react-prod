@@ -25,7 +25,7 @@ router.post('/toggle-estrella', authMiddleware, Verifica("usuario"), async (req,
                 'DELETE FROM Estrellas WHERE ID_Usuario = $1 AND ID_Ejercicio = $2',
                 [userId, ejercicioId]
             );
-            
+
             // Contar estrellas actuales
             const conteoEstrellas = await pool.query(
                 'SELECT COUNT(*) as total FROM Estrellas WHERE ID_Ejercicio = $1',

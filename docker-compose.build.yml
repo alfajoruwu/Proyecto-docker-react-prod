@@ -14,7 +14,7 @@ services:
   nginx:
     image: nginx
     ports:
-      - "80:80"
+      - "81:80"
     volumes:
       - ./front/dist:/usr/share/nginx/html
       - ./nginx.conf:/etc/nginx/nginx.conf
@@ -47,6 +47,14 @@ services:
       - ${ADMINER_PORT}:${ADMINER_PORT}
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - .env
 
 volumes:
   postgres_data1:
