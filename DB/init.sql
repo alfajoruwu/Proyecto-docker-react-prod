@@ -1,7 +1,7 @@
 
 CREATE TABLE Usuarios (
     ID SERIAL PRIMARY KEY,
-    nombre TEXT UNIQUE NOT NULL,
+    nombre TEXT NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     rol VARCHAR(50) DEFAULT 'usuario',
@@ -113,7 +113,15 @@ CREATE TABLE AyudaIA (
     Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Pregunta TEXT NOT NULL,
     Respuesta_IA TEXT NOT NULL,
-    Tipo_Interaccion VARCHAR(50), 
+    Tipo_Interaccion VARCHAR(50),
+    Modelo VARCHAR(200),
+    Prompt_Completo TEXT,
+    Contexto_BD TEXT,
+    Problema TEXT,
+    Respuesta_Estudiante TEXT,
+    Respuesta_Correcta TEXT,
+    Tabla_Esperada TEXT,
+    Tabla_Estudiante TEXT,
     FOREIGN KEY (ID_Usuario)
         REFERENCES Usuarios(ID)
         ON DELETE CASCADE,

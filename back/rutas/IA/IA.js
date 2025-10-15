@@ -423,12 +423,31 @@ ${tablaEstudiante || '(no genera tabla)'}
             const preguntaDatos = JSON.stringify({
                 contexto: contexto,
                 problema: problema,
-                respuesta: respuesta
+                respuesta: respuesta,
+                tablaEstudiante: tablaEstudiante
             });
 
             await pool.query(
-                'INSERT INTO AyudaIA (ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion) VALUES ($1, $2, $3, $4, $5)',
-                [req.user.id, ejercicioId || null, preguntaDatos, respuestaIA, 'PromptA']
+                `INSERT INTO AyudaIA (
+                    ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion,
+                    Modelo, Prompt_Completo, Contexto_BD, Problema, 
+                    Respuesta_Estudiante, Respuesta_Correcta, Tabla_Esperada, Tabla_Estudiante
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                [
+                    req.user.id,
+                    ejercicioId || null,
+                    preguntaDatos,
+                    respuestaIA,
+                    'PromptA',
+                    Modelo,
+                    Prompt,
+                    contexto,
+                    problema,
+                    respuesta,
+                    respuestaCorrecta,
+                    tablaEsperada,
+                    tablaEstudiante || null
+                ]
             );
             console.log('✅ Consulta IA registrada exitosamente para PromptA');
         } catch (dbError) {
@@ -535,8 +554,22 @@ ${respuesta}
             });
 
             await pool.query(
-                'INSERT INTO AyudaIA (ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion) VALUES ($1, $2, $3, $4, $5)',
-                [req.user.id, ejercicioId || null, preguntaDatos, respuestaIA, 'PromptB']
+                `INSERT INTO AyudaIA (
+                    ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion,
+                    Modelo, Prompt_Completo, Contexto_BD, Problema, Respuesta_Estudiante
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                [
+                    req.user.id,
+                    ejercicioId || null,
+                    preguntaDatos,
+                    respuestaIA,
+                    'PromptB',
+                    Modelo,
+                    prompt,
+                    contexto,
+                    problema,
+                    respuesta
+                ]
             );
             console.log('✅ Consulta IA registrada exitosamente para PromptB');
         } catch (dbError) {

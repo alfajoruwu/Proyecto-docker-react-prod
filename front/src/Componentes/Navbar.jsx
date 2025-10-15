@@ -37,6 +37,7 @@ const Navbar = ({ MenuLateral = true }) => {
     const IrCrearBaseDatos = () => { Navigate('/CrearDB') }
     const IrCrearEjercicio = () => { Navigate('/CrearEjercicio') }
     const IrEjercicios = () => { Navigate('/principal') }
+    const IrMiPerfil = () => { Navigate('/mi-perfil') }
 
     const IrloginSimple = () => { Navigate('/login') }
 
@@ -73,20 +74,23 @@ const Navbar = ({ MenuLateral = true }) => {
                                     <li><a onClick={() => IrEjercicios()}>Resolver ejercicios</a></li>
 
                                     {Nombre != '' &&
-                                        <li>
-                                            <details className="collapse  border-base-300 ">
-                                                <summary className="collapse-title">Crear ejercicios</summary>
-                                                <div className="collapse-content text-sm">
-                                                    <ul>
-                                                        <li>
+                                        <>
+                                            <li><a onClick={() => IrMiPerfil()}>Mi Perfil</a></li>
+                                            <li>
+                                                <details className="collapse  border-base-300 ">
+                                                    <summary className="collapse-title">Crear ejercicios</summary>
+                                                    <div className="collapse-content text-sm">
+                                                        <ul>
+                                                            <li>
 
-                                                            <a onClick={() => IrCrearEjercicio()}>Crear nuevo ejercicio</a>
-                                                            <a onClick={() => IrCrearBaseDatos()}>Crear base de datos</a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </details>
-                                        </li>
+                                                                <a onClick={() => IrCrearEjercicio()}>Crear nuevo ejercicio</a>
+                                                                <a onClick={() => IrCrearBaseDatos()}>Crear base de datos</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </details>
+                                            </li>
+                                        </>
                                     }
                                     <div class="divider"></div>
                                     <li>
@@ -117,7 +121,8 @@ const Navbar = ({ MenuLateral = true }) => {
                         <ul
                             tabindex="0"
                             class="menu menu-sm text-black dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                            <li onClick={() => Irlogin()}><a>Cerrar secion</a></li>
+                            <li onClick={() => IrMiPerfil()}><a>Mi Perfil</a></li>
+                            <li onClick={() => Irlogin()}><a>Cerrar sesión</a></li>
                         </ul>
                     </div>
                 }

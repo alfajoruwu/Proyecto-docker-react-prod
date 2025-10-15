@@ -178,7 +178,20 @@ router.post('/EjecucionSQL', authMiddleware, Verifica("usuario"), async (req, re
 
 // Registrar consulta a la IA
 router.post('/ConsultaIA', authMiddleware, Verifica("usuario"), async (req, res) => {
-    const { pregunta, respuesta, ejercicioId, tipoInteraccion } = req.body;
+    const {
+        pregunta,
+        respuesta,
+        ejercicioId,
+        tipoInteraccion,
+        modelo,
+        promptCompleto,
+        contextoBD,
+        problema,
+        respuestaEstudiante,
+        respuestaCorrecta,
+        tablaEsperada,
+        tablaEstudiante
+    } = req.body;
 
     if (!pregunta || !respuesta) {
         return res.status(400).json({ error: 'Faltan datos obligatorios' });
@@ -189,8 +202,26 @@ router.post('/ConsultaIA', authMiddleware, Verifica("usuario"), async (req, res)
 
     try {
         const result = await pool.query(
-            'INSERT INTO AyudaIA (ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion) VALUES ($1, $2, $3, $4, $5) RETURNING ID',
-            [req.user.id, ejercicioId, pregunta, respuesta, tipoInteraccion]
+            `INSERT INTO AyudaIA (
+                ID_Usuario, ID_Ejercicio, Pregunta, Respuesta_IA, Tipo_Interaccion,
+                Modelo, Prompt_Completo, Contexto_BD, Problema, 
+                Respuesta_Estudiante, Respuesta_Correcta, Tabla_Esperada, Tabla_Estudiante
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING ID`,
+            [
+                req.user.id,
+                ejercicioId || null,
+                pregunta,
+                respuesta,
+                tipoInteraccion || null,
+                modelo || null,
+                promptCompleto || null,
+                contextoBD || null,
+                problema || null,
+                respuestaEstudiante || null,
+                respuestaCorrecta || null,
+                tablaEsperada || null,
+                tablaEstudiante || null
+            ]
         );
 
         res.json({

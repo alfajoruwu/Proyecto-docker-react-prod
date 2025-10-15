@@ -17,6 +17,7 @@ const ejemploProtegida = require('./rutas/Ejemplos/EjemploProtegida');
 
 //Usuarios
 const usuarios = require('./rutas/Usuario/Login');
+const perfil = require('./rutas/Usuario/Perfil');
 
 //DB
 const baseDatosCrear = require('./rutas/BaseDatos/CrearBaseDatos');
@@ -32,6 +33,7 @@ const IA = require('./rutas/IA/IA');
 
 
 app.use('/usuarios', usuarios);
+app.use('/usuarios', perfil);
 
 app.use('/basedatos', baseDatosCrear);
 app.use('/basedatos', baseDatosUsar);

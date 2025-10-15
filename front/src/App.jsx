@@ -15,6 +15,7 @@ import CrearSolucion from './Vistas/EjecucionSQL/CrearSolucion';
 import ProbarDB from './Vistas/EjecucionSQL/ProbarDB';
 import RealizarEjercicio from './Vistas/EjecucionSQL/RealizarEjercicio';
 import CrearSolucionv2 from './Vistas/EjecucionSQL/CrearSolucionv2';
+import MiPerfil from './Vistas/Perfil/MiPerfil';
 
 
 function App() {
@@ -34,6 +35,9 @@ function App() {
 
             {/* Principal */}
             <Route path="/principal" element={<Principal />} />
+
+            {/* Perfil de usuario */}
+            <Route path="/mi-perfil" element={<MiPerfil />} />
 
             {/* Crear ejercicios */}
 

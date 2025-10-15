@@ -1,0 +1,138 @@
+/* Estilos para el perfil de usuario */
+
+.perfil-container {
+    min-height: calc(100vh - 64px);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.perfil-header {
+    background: linear-gradient(135deg, var(--color-base-200) 0%, var(--color-base-300) 100%);
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efecto hover en las cards */
+.perfil-container .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.perfil-container .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para las estadísticas */
+.stat {
+    padding: 1.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* Estilos para los logros */
+.card.border-success {
+    position: relative;
+    overflow: hidden;
+}
+
+.card.border-success::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(34, 197, 94, 0.1), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* Estilos para el avatar */
+.avatar.placeholder .bg-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .perfil-container {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* Efecto de progreso suave */
+.progress {
+    transition: value 0.3s ease;
+}
+
+/* Estilos para badges */
+.badge {
+    font-weight: 500;
+}
+
+/* Animación para las barras de progreso */
+@keyframes progressAnimation {
+    from {
+        transform: scaleX(0);
+        transform-origin: left;
+    }
+
+    to {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+}
+
+.progress {
+    animation: progressAnimation 0.8s ease-out;
+}
+
+/* Estilos para el grid de tópicos */
+.perfil-container .grid>.card {
+    min-height: 120px;
+}
+
+/* Efecto hover en logros no desbloqueados */
+.card.opacity-60:hover {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* Estilos para los números grandes */
+.text-2xl.font-bold,
+.text-xl.font-bold {}
+
+/* Mejora visual de las secciones de estadísticas */
+.stat.bg-base-200 {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Loading state mejorado */
+.loading-spinner {
+    color: var(--color-primary);
+}
