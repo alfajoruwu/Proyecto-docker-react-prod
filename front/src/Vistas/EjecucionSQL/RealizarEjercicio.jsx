@@ -80,15 +80,24 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast(response.data.message, 'success', 3000);
                 SetTablasSQLResultado(response.data.filas);
                 // Registrar ejecución exitosa
-                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { ejercicioId: IdEjercicioResolver, sqlQuery: SQLEjecutar, resultado: 'Exitoso' });
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { 
+                    ejercicioId: IdEjercicioResolver, 
+                    sqlQuery: SQLEjecutar, 
+                    resultado: 'Exitoso' 
+                });
             })
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
-                mostrarToast('SQL Error: ' + error.response.data.detalle, 'error', 3000);
+                const errorDetalle = error.response.data.detalle || error.response.data.error;
+                mostrarToast('SQL Error: ' + errorDetalle, 'error', 3000);
                 // Limpiar la tabla de resultados cuando hay error
                 SetTablasSQLResultado('');
-                // Registrar ejecución fallida
-                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { ejercicioId: IdEjercicioResolver, sqlQuery: SQLEjecutar, resultado: 'Error: ' + error.response.data.detalle });
+                // Registrar ejecución fallida con el error completo
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { 
+                    ejercicioId: IdEjercicioResolver, 
+                    sqlQuery: SQLEjecutar, 
+                    resultado: 'ERROR: ' + errorDetalle 
+                });
             });
 
     }
