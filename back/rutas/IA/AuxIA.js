@@ -1,5 +1,5 @@
 const axios = require('axios');
-require('dotenv').config({ path: '.env.development' });
+require('dotenv').config(); // Carga .env automáticamente
 const ControlLlamados = require('./ControlLlamados');
 
 // Instanciar el controlador de llamadas
