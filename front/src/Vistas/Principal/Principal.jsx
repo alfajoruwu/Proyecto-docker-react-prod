@@ -87,10 +87,9 @@ const Principal = () => {
         // Filtrar por ejercicios resueltos
         let matchesResolved = true;
         if (FiltrarResueltos === 'resueltos') {
-            matchesResolved = ejercicio?.resuelto === true || ejercicio?.completado === true;
+            matchesResolved = ejercicio?.completado === true;
         } else if (FiltrarResueltos === 'no_resueltos') {
-            matchesResolved = ejercicio?.resuelto === false || ejercicio?.completado === false ||
-                !ejercicio?.resuelto && !ejercicio?.completado;
+            matchesResolved = ejercicio?.completado === false || ejercicio?.completado === undefined;
         }
 
         return matchesName && matchesAuthor && matchesResolved;
@@ -135,21 +134,20 @@ const Principal = () => {
     };
 
 
-    // Cargar bases de datos
+    // Cargar ejercicios con estadísticas
     const CargarEjercicios = () => {
         setCargando(true);
-        apiClient.get('/ejericicios/ObtenerEjercicios_Publico')
+        apiClient.get('/ejericicios/ejercicios-con-stats')
             .then(response => {
-                console.log('Ejercicios:', response.data.ejercicios);
+                console.log('Ejercicios con stats:', response.data.ejercicios);
                 setCargando(false);
                 SetEjerciciosDisponibles(response.data.ejercicios);
             })
             .catch(error => {
                 console.error('Error al obtener Ejercicios:', error);
-                mostrarToast('Error al cargar las Ejercicios', 'error', 3000);
+                mostrarToast('Error al cargar los Ejercicios', 'error', 3000);
                 setCargando(false);
             });
-        console.log(ListaBasesDatos)
     };
 
     useEffect(() => {
@@ -248,6 +246,7 @@ const Principal = () => {
                         <MostrarCartasEjercicio
                             ListaEjercicios={filteredAndSortedEjercicios}
                             resolverEjercicio={InicarEjercicio}
+                            onActualizarEjercicios={CargarEjercicios}
                         />
                     )}
                 </div>

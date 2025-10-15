@@ -26,6 +26,7 @@ const baseDatosUsar = require('./rutas/BaseDatos/UsarBaseDatos');
 //Ejericicos
 const CrearEjercicio = require('./rutas/Ejercicios/CrearEjercicio');
 const Resultados = require('./rutas/Ejercicios/RegistrarInformacion');
+const Estrellas = require('./rutas/Ejercicios/Estrellas');
 
 app.use(express.json());
 // IA
@@ -40,6 +41,7 @@ app.use('/basedatos', baseDatosUsar);
 
 app.use('/ejericicios', CrearEjercicio);
 app.use('/ejericicios', Resultados);
+app.use('/ejericicios', Estrellas);
 
 app.use('/IA', IA);
 

@@ -6,12 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 
 import { formatearFecha } from '../../AuxS/Utilidades';
-import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags, FaDatabase } from 'react-icons/fa';
+import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags, FaDatabase, FaRegStar } from 'react-icons/fa';
 
 import './PopUpDatos.css'
 
 
-const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
+const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => {
     const { mostrarToast } = useToast();
 
     const Navigate = useNavigate();
@@ -87,6 +87,27 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
 
     }
 
+    // Manejar toggle de estrella
+    const handleToggleEstrella = async (ejercicioId, event) => {
+        event.stopPropagation(); // Evitar que se abra el modal
+
+        try {
+            const response = await apiClient.post('/ejericicios/toggle-estrella', {
+                ejercicioId
+            });
+
+            mostrarToast(response.data.message, 'success', 2000);
+
+            // Actualizar la lista de ejercicios si se proporciona la función
+            if (onActualizarEjercicios) {
+                onActualizarEjercicios();
+            }
+        } catch (error) {
+            console.error('Error al dar/quitar estrella:', error);
+            mostrarToast('Error al procesar la estrella', 'error', 3000);
+        }
+    };
+
 
 
 
@@ -111,8 +132,9 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                     <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
                         <div className="flex justify-between text-sm text-gray-500 mb-2 flex-shrink-0">
                             <p><FaRegCalendar className="inline mr-1" /> {formatFecha(ej.fecha_creacion)}</p>
-                            <div className="flex items-center">
-                                <FaStar className="text-yellow-500 mr-1" /> {ej.estrellas || 0}
+                            <div className="flex items-center gap-2">
+                                <FaStar className="text-yellow-500" />
+                                <span className="font-semibold">{ej.estrellas || 0}</span>
                             </div>
                         </div>
 
@@ -162,20 +184,37 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
 
                     {/* Footer con botones modernos */}
                     <div className="card-actions p-4 border-t border-gray-200 flex-shrink-0">
-                        <button className="btn btn-primary btn-wide flex items-center gap-2"
-                            onClick={() => ResolverEjercicio(ej)}>
-                            <FaCode className="text-lg" /> Resolver
+                        <button
+                            className={`btn btn-wide flex items-center gap-2 ${ej.completado ? 'btn-success' : 'btn-primary'}`}
+                            onClick={() => ResolverEjercicio(ej)}
+                        >
+                            {ej.completado ? (
+                                <>
+                                    <FaCheckCircle className="text-lg" /> Resuelto
+                                </>
+                            ) : (
+                                <>
+                                    <FaCode className="text-lg" /> Resolver
+                                </>
+                            )}
                         </button>
-                        <button className="btn btn-circle btn-outline btn-secondary ml-auto"
-                            onClick={() => console.log('LIKE')}>
-                            <FaStar className="text-xl" />
+                        <button
+                            className={`btn btn-circle ml-auto ${ej.tiene_estrella ? 'btn-warning' : 'btn-outline btn-warning'}`}
+                            onClick={(e) => handleToggleEstrella(ej.id, e)}
+                            title={ej.tiene_estrella ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                        >
+                            {ej.tiene_estrella ? (
+                                <FaStar className="text-xl" />
+                            ) : (
+                                <FaRegStar className="text-xl" />
+                            )}
                         </button>
                     </div>
                 </div>
             )) : (
                 <div className="text-center w-full py-10">
                     <h3 className="text-lg font-semibold">No hay ejercicios disponibles</h3>
-                    <p className="mt-2">Crea un nuevo ejercicio haciendo clic en el botón "+"</p>
+                    <p className="mt-2">Cambia los filtros</p>
                 </div>
             )}
 
