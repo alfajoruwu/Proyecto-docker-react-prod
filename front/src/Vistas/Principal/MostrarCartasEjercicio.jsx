@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 
 import { formatearFecha } from '../../AuxS/Utilidades';
-import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags } from 'react-icons/fa';
+import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags, FaDatabase } from 'react-icons/fa';
 
 import './PopUpDatos.css'
 
@@ -93,12 +93,12 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaEjercicios && ListaEjercicios.length > 0 ? ListaEjercicios.map((ej) => (
-                <div key={ej.id} className="card card-compact w-full md:w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                <div key={ej.id} className="card card-compact w-full md:w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[450px]">
                     {/* Header con gradiente */}
-                    <div className="bg-neutral  p-3 rounded-t-xl">
-                        <h2 className="card-title text-base-100">
-                            {ej.nombre_ej || 'Sin nombre'}
-                            <div className="badge badge-accent ml-2">{{
+                    <div className="bg-neutral p-3 rounded-t-xl flex-shrink-0">
+                        <h2 className="card-title text-base-100 break-words">
+                            <span className="break-words max-w-full">{ej.nombre_ej || 'Sin nombre'}</span>
+                            <div className="badge badge-accent ml-2 flex-shrink-0">{{
                                 1: 'Fácil',
                                 2: 'Intermedio',
                                 3: 'Difícil'
@@ -107,19 +107,25 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                         </h2>
                     </div>
 
-                    {/* Contenido con scroll suave */}
-                    <div className="card-body overflow-y-auto max-h-64 p-4">
-                        <div className="flex justify-between text-sm text-gray-500 mb-2">
+                    {/* Contenido sin scroll general */}
+                    <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
+                        <div className="flex justify-between text-sm text-gray-500 mb-2 flex-shrink-0">
                             <p><FaRegCalendar className="inline mr-1" /> {formatFecha(ej.fecha_creacion)}</p>
                             <div className="flex items-center">
                                 <FaStar className="text-yellow-500 mr-1" /> {ej.estrellas || 0}
                             </div>
                         </div>
 
-                        <p className="text-gray-700 mb-3"><b>Descripción:</b> {ej.descripcion || 'Sin descripción'}</p>
+                        {/* Descripción con su propio scroll */}
+                        <div className="mb-3 flex-shrink-0">
+                            <p className="text-gray-700 mb-1"><b>Descripción:</b></p>
+                            <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
+                                <p className="break-words whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
+                            </div>
+                        </div>
 
                         {/* Topicos con animación */}
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex flex-wrap gap-2 mb-4 flex-shrink-0">
                             {ej.topicos.map((topico, index) => (
                                 <div key={index}
                                     className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200">
@@ -129,26 +135,33 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                         </div>
 
                         {/* Estadísticas con iconos */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
                             <div className="flex items-center">
-                                <FaCheckCircle className="text-success mr-2" />
-                                <div>
+                                <FaCheckCircle className="text-success mr-2 flex-shrink-0" />
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-500">Completados</p>
                                     <p className="font-semibold">{ej.veces_completado || 0}</p>
                                 </div>
                             </div>
                             <div className="flex items-center">
-                                <FaUser className="text-info mr-2" />
-                                <div>
+                                <FaUser className="text-info mr-2 flex-shrink-0" />
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-500">Autor</p>
-                                    <p className="font-semibold">{ej.nombre_autor || 'Anónimo'}</p>
+                                    <p className="font-semibold break-words">{ej.nombre_autor || 'Anónimo'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center">
+                                <FaDatabase className="text-warning mr-2 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-sm text-gray-500">Base de datos</p>
+                                    <p className="font-semibold break-words">{ej.nombre_basedatos || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Footer con botones modernos */}
-                    <div className="card-actions p-4 border-t border-gray-200">
+                    <div className="card-actions p-4 border-t border-gray-200 flex-shrink-0">
                         <button className="btn btn-primary btn-wide flex items-center gap-2"
                             onClick={() => ResolverEjercicio(ej)}>
                             <FaCode className="text-lg" /> Resolver
@@ -176,15 +189,13 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-primary-content mb-2">
-                                    🚀 ¡Ejercicio Listo!
+                                    Ejercicio preparado
                                 </h2>
                                 <h3 className="text-lg text-primary-content/90 font-medium">
                                     {NombreEjercicio}
                                 </h3>
                             </div>
-                            <div className="badge badge-accent badge-lg">
-                                <FaCode className="mr-2" /> SQL Challenge
-                            </div>
+
                         </div>
                     </div>
 
@@ -199,8 +210,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                                     </div>
                                     <h3 className="text-xl font-bold text-info">Problema a Resolver</h3>
                                 </div>
-                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-info">
-                                    <p className="text-base-content leading-relaxed">{ProblemaEjercicio}</p>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-info max-h-60 overflow-y-auto overflow-x-hidden">
+                                    <p className="text-base-content leading-relaxed break-words whitespace-pre-wrap">{ProblemaEjercicio}</p>
                                 </div>
                             </div>
                         </div>
@@ -214,8 +225,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                                     </div>
                                     <h3 className="text-xl font-bold text-success">Base de Datos: {BaseDATOS}</h3>
                                 </div>
-                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success">
-                                    <p className="text-base-content leading-relaxed">{ContextoDB}</p>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success max-h-60 overflow-y-auto overflow-x-hidden">
+                                    <p className="text-base-content leading-relaxed break-words whitespace-pre-wrap">{ContextoDB}</p>
                                 </div>
                             </div>
                         </div>
@@ -267,13 +278,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios }) => {
                         </div>
                     </div>
 
-                    {/* Footer con información adicional */}
-                    <div className="mt-6 p-4 bg-base-200 rounded-xl border border-base-300">
-                        <div className="flex items-center justify-center gap-2 text-sm text-base-content/70">
-                            <FaRegCalendar className="text-primary" />
-                            <span>¡Buena suerte con tu ejercicio SQL!</span>
-                        </div>
-                    </div>
+
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>

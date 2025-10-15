@@ -92,12 +92,15 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                     </div>
 
                     {/* Contenido principal */}
-                    <div className="card-body overflow-y-auto max-h-64 p-4 space-y-4">
+                    <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
                         {/* Información básica */}
-                        <div className="space-y-2">
-                            <p className="text-gray-700 mb-3">
-                                <span className="text-gray-700 mb-3">Resumen:</span> {ej.descripcion || 'Sin descripción'}
-                            </p>
+                        <div className="space-y-2 flex-shrink-0">
+                            <div className="mb-2">
+                                <span className="text-gray-700 font-semibold">Resumen:</span>
+                                <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2 mt-1">
+                                    <p className="break-words whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
+                                </div>
+                            </div>
                             <p className="flex items-center gap-2 text-sm text-gray-500">
                                 <FaRegCalendarAlt />
                                 Creado el: {formatFecha(ej.fecha_creacion)}
@@ -105,7 +108,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                         </div>
 
                         {/* Topicos con diseño moderno */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 flex-shrink-0">
                             <h3 className="text-lg font-semibold flex items-center gap-2">
                                 <FaTags />
                                 Topicos
@@ -170,15 +173,13 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-primary-content mb-2">
-                                    📋 Detalles del Ejercicio
+                                    Detalles del Ejercicio
                                 </h2>
                                 <h3 className="text-lg text-primary-content/90 font-medium">
                                     {NombreEjercicio}
                                 </h3>
                             </div>
-                            <div className="badge badge-accent badge-lg">
-                                <FaEye className="mr-2" /> Vista Detallada
-                            </div>
+
                         </div>
                     </div>
 
@@ -193,8 +194,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                                     </div>
                                     <h3 className="text-xl font-bold text-info">Enunciado del Problema</h3>
                                 </div>
-                                <div className="bg-base-100 rounded-lg p-6 border-l-4 border-info">
-                                    <p className="text-base-content leading-relaxed text-lg">{ProblemaEjercicio}</p>
+                                <div className="bg-base-100 rounded-lg p-6 border-l-4 border-info max-h-60 overflow-y-auto overflow-x-hidden">
+                                    <p className="text-base-content leading-relaxed text-lg break-words whitespace-pre-wrap">{ProblemaEjercicio}</p>
                                 </div>
                             </div>
                         </div>
@@ -211,8 +212,8 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                                         <p className="text-success/70 font-medium">{BaseDATOS}</p>
                                     </div>
                                 </div>
-                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success">
-                                    <p className="text-base-content leading-relaxed">{ContextoDB}</p>
+                                <div className="bg-base-100 rounded-lg p-4 border-l-4 border-success max-h-60 overflow-y-auto overflow-x-hidden">
+                                    <p className="text-base-content leading-relaxed break-words whitespace-pre-wrap">{ContextoDB}</p>
                                 </div>
                             </div>
                         </div>
@@ -256,13 +257,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                         </div>
                     </div>
 
-                    {/* Footer con información adicional */}
-                    <div className="mt-6 p-4 bg-gradient-to-r from-base-200 to-base-300 rounded-xl border border-base-300">
-                        <div className="flex items-center justify-center gap-2 text-sm text-base-content/70">
-                            <FaRegCalendarAlt className="text-primary" />
-                            <span>Información completa del ejercicio disponible para revisión</span>
-                        </div>
-                    </div>
+
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>

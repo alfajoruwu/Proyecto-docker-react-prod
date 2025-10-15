@@ -471,19 +471,17 @@ const RealizarEjercicio = ({ }) => {
                             <div className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 rounded-lg p-4 border border-base-300 min-h-0">
                                 {tabActiva === 'problema' && (
                                     <div className="w-full">
-
-                                        <div className="leading-relaxed text-xs sm:text-sm break-words">
-                                            <ReactMarkdown>{ProblemaEjercicio}</ReactMarkdown>
-                                        </div>
+                                        <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">
+                                            {ProblemaEjercicio}
+                                        </p>
                                     </div>
                                 )}
 
                                 {tabActiva === 'contexto' && (
                                     <div className="w-full">
-
-                                        <div className="leading-relaxed text-xs sm:text-sm break-words">
-                                            <ReactMarkdown>{DatosDB.descripcion}</ReactMarkdown>
-                                        </div>
+                                        <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">
+                                            {DatosDB.descripcion}
+                                        </p>
                                     </div>
                                 )}
 

@@ -32,11 +32,11 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaBasesDatos && ListaBasesDatos.length > 0 ? ListaBasesDatos.map((db) => (
-                <div key={db.id} className="card card-compact w-full md:w-96 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                <div key={db.id} className="card card-compact w-full md:w-96 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[380px]">
                     {/* Header con degradado y estadística */}
-                    <div className="bg-neutral p-4 rounded-t-xl">
+                    <div className="bg-neutral p-4 rounded-t-xl flex-shrink-0">
                         <div className="flex justify-between items-center">
-                            <h2 className="card-title text-base-100">{db.nombre || 'Sin nombre'}</h2>
+                            <h2 className="card-title text-base-100 break-words max-w-full">{db.nombre || 'Sin nombre'}</h2>
                             {/* <div className="badge badge-accent ">
                                 <FaDatabase className="mr-1" /> {db.ejercicios_count || 0} ejercicios
                             </div> */}
@@ -44,27 +44,29 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
                     </div>
 
                     {/* Contenido principal */}
-                    <div className="card-body p-4 space-y-4">
-                        {/* Información básica con iconos */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                    <div className="card-body p-4 flex-1 min-h-0 flex flex-col">
+                        {/* Resumen con scroll */}
+                        <div className="mb-3 flex-shrink-0">
+                            <p className="text-gray-700 mb-1 font-semibold flex items-center gap-2">
                                 <FaRegFileAlt className="text-lg" />
-                                <div>
-                                    <p className="text-sm text-gray-500">Resumen</p>
-                                    <p className="font-medium text-gray-500">{db.resumen || 'Sin descripción'}</p>
-                                </div>
+                                Resumen
+                            </p>
+                            <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
+                                <p className="break-words whitespace-pre-wrap text-sm text-gray-600">{db.resumen || 'Sin descripción'}</p>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                <FaRegCalendarCheck className="text-lg" />
-                                <div>
-                                    <p className="text-sm text-gray-500">Creación</p>
-                                    <p className="font-medium text-gray-500">{formatFecha(db.fecha_creacion)}</p>
-                                </div>
+                        </div>
+
+                        {/* Información de fecha */}
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 mb-4 flex-shrink-0">
+                            <FaRegCalendarCheck className="text-lg" />
+                            <div>
+                                <p className="text-sm text-gray-500">Creación</p>
+                                <p className="font-medium text-gray-500">{formatFecha(db.fecha_creacion)}</p>
                             </div>
                         </div>
 
                         {/* Acciones con diseño moderno */}
-                        <div className="card-actions flex flex-col md:flex-row gap-3">
+                        <div className="card-actions flex flex-col md:flex-row gap-3 mt-auto flex-shrink-0">
                             {/* Botón principal */}
 
 

@@ -210,7 +210,7 @@ const CrearSolucion = ({ }) => {
                                 <FaLightbulb className="inline mr-2" />
                                 Problema a Resolver
                             </h4>
-                            <p className="leading-relaxed">{ProblemaEjercicio}</p>
+                            <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">{ProblemaEjercicio}</p>
                         </div>
                     </div>
 
@@ -221,7 +221,7 @@ const CrearSolucion = ({ }) => {
                                 <FaFile className="inline mr-2" />
                                 Resumen del Ejercicio
                             </h4>
-                            <p className="leading-relaxed">{ResumenEjercicio}</p>
+                            <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">{ResumenEjercicio}</p>
                         </div>
                     </div>
 
@@ -232,7 +232,7 @@ const CrearSolucion = ({ }) => {
                                 <FaDatabase className="inline mr-2" />
                                 Contexto de Base de Datos
                             </h4>
-                            <p className="leading-relaxed">{DatosDB.descripcion}</p>
+                            <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">{DatosDB.descripcion}</p>
                         </div>
                     </div>
                 </div>

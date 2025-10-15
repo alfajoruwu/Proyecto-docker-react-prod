@@ -23,10 +23,7 @@ function validarSelectSQL(sql) {
         .replace(/\s+/g, ' ')
         .trim();
 
-    // Verificar que comience con SELECT
-    if (!limpio.toUpperCase().startsWith('SELECT')) {
-        return { isValid: false, error: 'Solo se permiten consultas SELECT' };
-    }
+
 
     // Expresiones prohibidas
     const expresionesProhibidas = [
