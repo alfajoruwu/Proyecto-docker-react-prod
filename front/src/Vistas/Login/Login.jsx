@@ -15,11 +15,15 @@ const Login = () => {
     const { mostrarToast } = useToast();
     const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto)
 
+    const { Nombre, SetNombre } = useContext(EstadoGlobalContexto)
+    const { Rol, SetRol } = useContext(EstadoGlobalContexto)
+
+
     // ----- Navegar Rutas -----
 
     const IrRegistro = () => { Navigate('/Registro') }
     const IrLogin = () => { Navigate('/Login') }
-    const Irprincipal = () => { Navigate('/') }
+    const Irprincipal = () => { Navigate('/principal') }
     // ----- Variables -------
 
     const [Usuario, SetUsuario] = useState("")
@@ -32,15 +36,23 @@ const Login = () => {
         SetContrasena(event.target.value)
     }
 
+    const IrEjercicios = () => { Navigate('/principal') }
+
     // ----- Funciones ------
 
     const EnvioLogin = (Usuario, Contrasena) => {
         apiClient.post('/usuarios/login', { email: Usuario, password: Contrasena })
 
             .then(response => {
-                //console.log('Usuarios:', response.data); 
+                console.log('Usuarios:', response.data);
                 localStorage.setItem('accessToken', response.data.accessToken);
                 localStorage.setItem('refreshToken', response.data.refreshToken);
+                // Setear datos usuario
+                localStorage.setItem('Nombre', response.data.Usuario.nombre);
+                localStorage.setItem('Rol', response.data.Usuario.ROL);
+
+                SetRol(response.data.Usuario.ROL)
+                SetNombre(response.data.Usuario.nombre)
                 Irprincipal();
             })
 
@@ -56,7 +68,7 @@ const Login = () => {
 
         <div className='h-screen w-screen'>
 
-            <Navbar />
+            <Navbar MenuLateral={false} />
 
             <div className='flex justify-end items-center mr-4 mt-2 gap-2'>
                 <label>Modo:</label>
@@ -88,7 +100,7 @@ const Login = () => {
                         <div class="divider"></div>
 
                         <button onClick={() => IrRegistro()} className="btn btn-secondary">Crear cuenta</button>
-                        <button className="btn btn-secondary">Ingresar como invitado    </button>
+                        {/* <button onClick={() => IrEjercicios()} className="btn btn-secondary">Ingresar como invitado    </button> */}
 
 
                     </div>

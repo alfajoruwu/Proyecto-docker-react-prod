@@ -9,6 +9,13 @@ import Login from './Vistas/Login/Login';
 import Ejemplo from './Vistas/Ejemplo/Ejemplo';
 import Registro from './Vistas/Login/Registro';
 import Principal from './Vistas/Principal/Principal';
+import CrearDB from './Vistas/CrearDB/CrearDB';
+import CrearEjercicio from './Vistas/CrearEjercicio/CrearEjercicio';
+import CrearSolucion from './Vistas/EjecucionSQL/CrearSolucion';
+import ProbarDB from './Vistas/EjecucionSQL/ProbarDB';
+import RealizarEjercicio from './Vistas/EjecucionSQL/RealizarEjercicio';
+import CrearSolucionv2 from './Vistas/EjecucionSQL/CrearSolucionv2';
+import MiPerfil from './Vistas/Perfil/MiPerfil';
 
 
 function App() {
@@ -20,7 +27,7 @@ function App() {
         <BrowserRouter>
           <Routes>
 
-            <Route path="/" element={<Principal />} />
+            <Route path="/" element={<Login />} />
 
             {/* Inicio de seccion */}
             <Route path="/login" element={<Login />} />
@@ -29,6 +36,21 @@ function App() {
             {/* Principal */}
             <Route path="/principal" element={<Principal />} />
 
+            {/* Perfil de usuario */}
+            <Route path="/mi-perfil" element={<MiPerfil />} />
+
+            {/* Crear ejercicios */}
+
+            <Route path='/CrearEjercicio' element={<CrearEjercicio />} />
+            <Route path='/CrearDB' element={<CrearDB />} />
+
+
+            {/* ejecucion de SQL */}
+            <Route path='/CrearSolucion' element={<CrearSolucionv2 />} />
+            <Route path='/ProbarDB' element={<ProbarDB />} />
+            <Route path='/RealizarEjercicio' element={<RealizarEjercicio />} />
+
+            {/* Rutas de ejemplo */}
 
           </Routes>
         </BrowserRouter>

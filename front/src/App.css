@@ -10,7 +10,8 @@
 }
 
 
-@plugin "daisyui/theme" {
+
+/* @plugin "daisyui/theme" {
   name: "dark-orange";
   default: false;
   prefersdark: true;
@@ -43,14 +44,15 @@
   --border: 1px;
   --depth: 1;
   --noise: 0;
-}
+} */
+
 
 
 
 
 @plugin "daisyui/theme" {
   name: "lig";
-  default: false;
+  default: true;
   prefersdark: false;
   color-scheme: "light";
   --color-base-100: oklch(100% 0 0);
@@ -69,7 +71,7 @@
   --color-info-content: oklch(29% 0.066 243.157);
   --color-success: oklch(76% 0.177 163.223);
   --color-success-content: oklch(37% 0.077 168.94);
-  --color-warning: oklch(25% 0.092 26.042);
+  --color-warning: oklch(41% 0.112 45.904);
   --color-warning-content: oklch(98% 0.003 247.858);
   --color-error: oklch(50% 0.213 27.518);
   --color-error-content: oklch(96% 0.007 247.896);
@@ -82,6 +84,7 @@
   --depth: 0;
   --noise: 0;
 }
+
 
 
 
@@ -129,4 +132,9 @@
 /* Estilos generales para los toasts */
 .alert {
   animation: fadeIn 0.3s ease-in-out, fadeOut 0.3s ease-in-out 2.7s forwards;
+  z-index: 9999 !important;
+}
+
+.toast {
+  z-index: 9999 !important;
 }

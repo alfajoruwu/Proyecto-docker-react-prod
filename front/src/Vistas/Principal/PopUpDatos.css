@@ -1,0 +1,55 @@
+.PopUpDatos {
+    display: grid;
+
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 1rem;
+    grid-template-areas:
+        'elementoA elementoB'
+        'elementoC elementoD'
+}
+
+.elementoA {
+    grid-area: elementoA
+}
+
+.elementoB {
+    grid-area: elementoB
+}
+
+.elementoC {
+    grid-area: elementoC
+}
+
+.elementoD {
+    grid-area: elementoD
+}
+
+@media (max-width: 640px) {
+    .PopUpDatos {
+        grid-template-rows: 1fr 1fr 1fr 1fr;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            'elementoA'
+            'elementoB'
+            'elementoC'
+            'elementoD'
+    }
+
+    .elementoA {
+        grid-area: elementoA
+    }
+
+    .elementoB {
+        grid-area: elementoB
+    }
+
+    .elementoC {
+        grid-area: elementoC
+    }
+
+    .elementoD {
+        grid-area: elementoD
+    }
+
+}
