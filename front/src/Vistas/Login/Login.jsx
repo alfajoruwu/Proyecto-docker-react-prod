@@ -82,7 +82,7 @@ const Login = () => {
                     <div className='card-body flex flex-col gap-2'>
 
                         <div className='flex '>
-                            <h1 className="text-2xl font-bold" >SQL Faciltio</h1>
+                            <h1 className="text-2xl font-bold" >SQL Facilito</h1>
                         </div>
 
                         <div class="divider"></div>

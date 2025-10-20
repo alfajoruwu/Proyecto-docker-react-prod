@@ -55,6 +55,25 @@ function validarSelectSQL(sql) {
         }
     }
 
+    // 4. Bloquear acceso a tablas del sistema de PostgreSQL
+    const tablasProhibidas = [
+        /\bpg_\w+/i,                    // Todas las tablas pg_* (pg_tables, pg_user, pg_database, etc.)
+        /\binformation_schema\./i,      // Schema information_schema
+        /\bpg_catalog\./i,              // Schema pg_catalog
+        /\bcurrent_user\b/i,            // Función que revela usuario
+        /\bcurrent_database\b/i,        // Función que revela base de datos
+        /\bsession_user\b/i,            // Función que revela usuario de sesión
+        /\buser\s*\(/i,                 // Función USER()
+    ];
+
+    for (const tablaProhibida of tablasProhibidas) {
+        if (tablaProhibida.test(limpio)) {
+            return {
+                isValid: false,
+                error: 'No se permite acceso a tablas del sistema o metadatos de PostgreSQL'
+            };
+        }
+    }
 
     return { isValid: true };
 }
@@ -80,7 +99,7 @@ router.post('/EjecutarQuery', authMiddleware, Verifica("usuario"), async (req, r
         }
 
         // Usar el pool de solo lectura para mayor seguridad
-        const temp = NewPool_create('ID_' + dbId);
+        const temp = NewPool('ID_' + dbId);
 
         // Establecer timeout para evitar consultas que consuman demasiados recursos
         const queryConfig = {

@@ -171,6 +171,22 @@ router.post('/CrearDB', authMiddleware, Verifica("usuario"), async (req, res) =>
             throw new Error(`Error SQL: ${err.message}`);
         }
 
+        // --- Otorgar permisos de lectura al usuario APP_DB_USER ---
+        try {
+            tempPool = NewPool_create('ID_' + dbId);
+            await tempPool.query(`GRANT CONNECT ON DATABASE "ID_${dbId}" TO ${process.env.APP_DB_USER}`);
+            await tempPool.query(`GRANT USAGE ON SCHEMA public TO ${process.env.APP_DB_USER}`);
+            await tempPool.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${process.env.APP_DB_USER}`);
+            await tempPool.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${process.env.APP_DB_USER}`);
+            await tempPool.end();
+            tempPool = null;
+            console.log(`✅ Permisos de lectura otorgados a ${process.env.APP_DB_USER} en DB "ID_${dbId}"`);
+        } catch (err) {
+            console.error(`❌ Error otorgando permisos:`, err.message);
+            // No lanzamos error aquí, solo advertimos
+            console.warn(`⚠️ Continúa la creación de BD sin permisos completos`);
+        }
+
         // --- Actualizar campo de SQLinit ---
         try {
             await pool.query(
@@ -480,6 +496,22 @@ router.put('/EditarDB', authMiddleware, Verifica("usuario"), async (req, res) =>
             } catch (err) {
                 console.error(`❌ Error SQL "${err.message}":`, err.message);
                 throw new Error(`Error SQL: ${err.message}`);
+            }
+
+            // --- Otorgar permisos de lectura al usuario APP_DB_USER ---
+            try {
+                tempPool = NewPool_create(dbName_physical);
+                await tempPool.query(`GRANT CONNECT ON DATABASE "${dbName_physical}" TO ${process.env.APP_DB_USER}`);
+                await tempPool.query(`GRANT USAGE ON SCHEMA public TO ${process.env.APP_DB_USER}`);
+                await tempPool.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${process.env.APP_DB_USER}`);
+                await tempPool.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${process.env.APP_DB_USER}`);
+                await tempPool.end();
+                tempPool = null;
+                console.log(`✅ Permisos de lectura otorgados a ${process.env.APP_DB_USER} en DB "${dbName_physical}"`);
+            } catch (err) {
+                console.error(`❌ Error otorgando permisos:`, err.message);
+                // No lanzamos error aquí, solo advertimos
+                console.warn(`⚠️ Continúa la actualización de BD sin permisos completos`);
             }
 
             // Actualizar metadatos en la tabla BaseDatos y añadir SQL_init

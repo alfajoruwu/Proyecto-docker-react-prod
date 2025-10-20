@@ -80,10 +80,10 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast(response.data.message, 'success', 3000);
                 SetTablasSQLResultado(response.data.filas);
                 // Registrar ejecución exitosa
-                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { 
-                    ejercicioId: IdEjercicioResolver, 
-                    sqlQuery: SQLEjecutar, 
-                    resultado: 'Exitoso' 
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', {
+                    ejercicioId: IdEjercicioResolver,
+                    sqlQuery: SQLEjecutar,
+                    resultado: 'Exitoso'
                 });
             })
             .catch(error => {
@@ -93,10 +93,10 @@ const RealizarEjercicio = ({ }) => {
                 // Limpiar la tabla de resultados cuando hay error
                 SetTablasSQLResultado('');
                 // Registrar ejecución fallida con el error completo
-                apiClient.post('/ejericicios/RegistrarEjecucionSQL', { 
-                    ejercicioId: IdEjercicioResolver, 
-                    sqlQuery: SQLEjecutar, 
-                    resultado: 'ERROR: ' + errorDetalle 
+                apiClient.post('/ejericicios/RegistrarEjecucionSQL', {
+                    ejercicioId: IdEjercicioResolver,
+                    sqlQuery: SQLEjecutar,
+                    resultado: 'ERROR: ' + errorDetalle
                 });
             });
 
@@ -532,15 +532,14 @@ const RealizarEjercicio = ({ }) => {
                                     <span className="hidden sm:inline">Ejecutar SQL</span>
                                 </button>
                             </div>
-
-
                         </div>
+
                         <div className='flex-1 overflow-auto min-h-0'>
                             <CodeMirror
                                 className='h-full'
                                 value={SQLEjecutar}
                                 placeholder={"SELECT * FROM tabla WHERE condicion;"}
-                                onChange={SetSQLEjecutar}
+                                onChange={(value) => SetSQLEjecutar(value)}
                                 height='100%'
                                 extensions={[sql()]}
                             />

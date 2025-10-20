@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 import { FaFilePen } from "react-icons/fa6";
 import { FaFileArrowUp } from "react-icons/fa6";
-import { FaDatabase, FaSave, FaTimes, FaCode, FaCheckCircle, FaEdit } from "react-icons/fa";
+import { FaDatabase, FaSave, FaTimes, FaCode, FaCheckCircle, FaEdit, FaExclamationTriangle } from "react-icons/fa";
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { useEffect } from 'react';
@@ -16,6 +16,80 @@ const FormularioEditarDB = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArc
     const Navigate = useNavigate();
     const { mostrarToast } = useToast();
     const { valorGlobal, setValorGlobal } = useContext(EstadoGlobalContexto)
+
+    const [advertenciaSQL, setAdvertenciaSQL] = useState(null);
+
+    // Función para validar SQL en tiempo real
+    const validarSQLTiempoReal = (sql) => {
+        if (!sql || sql.trim() === '') {
+            setAdvertenciaSQL(null);
+            return;
+        }
+
+        const sqlLimpio = sql
+            .replace(/--.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+
+        // Palabras y patrones prohibidos (seguridad + incompatibilidades MySQL + restricciones backend)
+        const prohibiciones = [
+            // Seguridad - Acceso al sistema
+            { patron: /\bPG_\w+/, mensaje: 'Acceso a tablas del sistema (pg_*) no está permitido.' },
+            { patron: /\bINFORMATION_SCHEMA\./, mensaje: 'Acceso a INFORMATION_SCHEMA no está permitido.' },
+            { patron: /\bPG_CATALOG\./, mensaje: 'Acceso a PG_CATALOG no está permitido.' },
+            { patron: /\bCURRENT_USER\b/, mensaje: 'La función CURRENT_USER no está permitida.' },
+            { patron: /\bCURRENT_DATABASE\b/, mensaje: 'La función CURRENT_DATABASE no está permitida.' },
+            { patron: /\bSESSION_USER\b/, mensaje: 'La función SESSION_USER no está permitida.' },
+            { patron: /\bPG_SLEEP\b/, mensaje: 'La función PG_SLEEP no está permitida.' },
+            
+            // Restricciones del backend - Solo CREATE e INSERT permitidos
+            { patron: /\bDROP\b/i, mensaje: 'DROP no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bUPDATE\b/i, mensaje: 'UPDATE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bALTER\b/i, mensaje: 'ALTER no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bGRANT\b/i, mensaje: 'GRANT no está permitido. Los permisos se asignan automáticamente.' },
+            { patron: /\bREVOKE\b/i, mensaje: 'REVOKE no está permitido. Los permisos se gestionan automáticamente.' },
+            { patron: /\bTRUNCATE\b/i, mensaje: 'TRUNCATE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bREPLACE\b/i, mensaje: 'REPLACE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bEXECUTE\b/i, mensaje: 'EXECUTE no está permitido por razones de seguridad.' },
+            { patron: /\bMERGE\b/i, mensaje: 'MERGE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bFUNCTION\b/i, mensaje: 'CREATE FUNCTION no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bTRIGGER\b/i, mensaje: 'CREATE TRIGGER no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bINDEX\b/i, mensaje: 'CREATE INDEX no está permitido en SQL inicial. Los índices pueden agregarse después.' },
+            { patron: /\bSEQUENCE\b/i, mensaje: 'CREATE SEQUENCE no está permitido. Usa SERIAL en su lugar.' },
+            { patron: /\bVIEW\b/i, mensaje: 'CREATE VIEW no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bRULE\b/i, mensaje: 'CREATE RULE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bCAST\b/i, mensaje: 'CREATE CAST no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
+            { patron: /\bEXTENSION\b/i, mensaje: 'CREATE EXTENSION no está permitido. Las extensiones las gestiona el administrador.' },
+            { patron: /\bOWNER\s+TO\b/i, mensaje: 'OWNER TO no está permitido. El propietario se asigna automáticamente.' },
+            { patron: /\bSECURITY\b/i, mensaje: 'Configuraciones de SECURITY no están permitidas en SQL inicial.' },
+            
+            // Incompatibilidades MySQL → PostgreSQL
+            { patron: /\bAUTO_INCREMENT\b/i, mensaje: 'AUTO_INCREMENT es de MySQL. En PostgreSQL usa SERIAL o GENERATED ALWAYS AS IDENTITY.' },
+            { patron: /\bENGINE\s*=\s*InnoDB/i, mensaje: 'ENGINE=InnoDB es de MySQL. PostgreSQL no necesita especificar motor de almacenamiento.' },
+            { patron: /\bTINYINT\b/i, mensaje: 'TINYINT no existe en PostgreSQL. Usa SMALLINT en su lugar.' },
+            { patron: /\bMEDIUMINT\b/i, mensaje: 'MEDIUMINT no existe en PostgreSQL. Usa INTEGER en su lugar.' },
+            { patron: /\bDOUBLE\b(?!\s+PRECISION)/i, mensaje: 'DOUBLE sin PRECISION no es estándar. En PostgreSQL usa DOUBLE PRECISION o REAL.' },
+            { patron: /\bDATETIME\b/i, mensaje: 'DATETIME no existe en PostgreSQL. Usa TIMESTAMP en su lugar.' },
+            { patron: /\bLIMIT\s+\d+\s*,\s*\d+/i, mensaje: 'Sintaxis LIMIT offset,count es de MySQL. En PostgreSQL usa LIMIT count OFFSET offset.' },
+            { patron: /`[^`]+`/, mensaje: 'Backticks (`) son de MySQL. En PostgreSQL usa comillas dobles ("tabla") o sin comillas.' },
+            { patron: /\bUNSIGNED\b/i, mensaje: 'UNSIGNED no existe en PostgreSQL. Usa tipos numéricos apropiados o CHECK constraints.' },
+            { patron: /\bZEROFILL\b/i, mensaje: 'ZEROFILL no existe en PostgreSQL. Formatea en la aplicación o usa LPAD().' },
+            { patron: /\bENUM\s*\([^)]+\)/i, mensaje: 'ENUM con sintaxis inline no está permitido. Crea el tipo con CREATE TYPE nombre AS ENUM (...) primero.' },
+        ];
+
+        // Buscar la primera coincidencia
+        for (const { patron, mensaje } of prohibiciones) {
+            if (patron.test(sqlLimpio)) {
+                setAdvertenciaSQL({ tipo: 'error', mensaje });
+                return;
+            }
+        }
+
+        // Si no hay errores, limpiar advertencia
+        setAdvertenciaSQL(null);
+    };
 
     const LimpiarFormularios = () => {
         SeterNombreArchivo('');
@@ -224,12 +298,28 @@ const FormularioEditarDB = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArc
                         </div>
                         <h3 className="font-bold text-lg">Editor archivo</h3>
                     </div>
-                    <div className='  flex flex-col gap-3 '>
+                    <div className='flex flex-col gap-3'>
+
+                        {/* Advertencia SQL en tiempo real */}
+                        {advertenciaSQL && (
+                            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md">
+                                <div className="flex items-center gap-3">
+                                    <FaExclamationTriangle className="text-2xl flex-shrink-0" />
+                                    <div>
+                                        <p className="font-bold text-lg">Advertencia de seguridad</p>
+                                        <p className="text-sm mt-1">{advertenciaSQL.mensaje}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <CodeMirror className=''
                             value={SQLinicial}
                             height='50vh'
-                            onChange={SeterSQLinicial}
+                            onChange={(value) => {
+                                SeterSQLinicial(value);
+                                validarSQLTiempoReal(value);
+                            }}
                             extensions={[sql()]}
                             basicSetup={{
                                 lineNumbers: true,
