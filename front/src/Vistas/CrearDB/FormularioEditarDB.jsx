@@ -43,7 +43,7 @@ const FormularioEditarDB = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArc
             { patron: /\bCURRENT_DATABASE\b/, mensaje: 'La función CURRENT_DATABASE no está permitida.' },
             { patron: /\bSESSION_USER\b/, mensaje: 'La función SESSION_USER no está permitida.' },
             { patron: /\bPG_SLEEP\b/, mensaje: 'La función PG_SLEEP no está permitida.' },
-            
+
             // Restricciones del backend - Solo CREATE e INSERT permitidos
             { patron: /\bDROP\b/i, mensaje: 'DROP no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
             { patron: /\bUPDATE\b/i, mensaje: 'UPDATE no está permitido en SQL inicial. Solo CREATE TABLE e INSERT INTO.' },
@@ -64,7 +64,7 @@ const FormularioEditarDB = ({ dbId, SetNombre, SetResumen, Setcontext, NombreArc
             { patron: /\bEXTENSION\b/i, mensaje: 'CREATE EXTENSION no está permitido. Las extensiones las gestiona el administrador.' },
             { patron: /\bOWNER\s+TO\b/i, mensaje: 'OWNER TO no está permitido. El propietario se asigna automáticamente.' },
             { patron: /\bSECURITY\b/i, mensaje: 'Configuraciones de SECURITY no están permitidas en SQL inicial.' },
-            
+
             // Incompatibilidades MySQL → PostgreSQL
             { patron: /\bAUTO_INCREMENT\b/i, mensaje: 'AUTO_INCREMENT es de MySQL. En PostgreSQL usa SERIAL o GENERATED ALWAYS AS IDENTITY.' },
             { patron: /\bENGINE\s*=\s*InnoDB/i, mensaje: 'ENGINE=InnoDB es de MySQL. PostgreSQL no necesita especificar motor de almacenamiento.' },
