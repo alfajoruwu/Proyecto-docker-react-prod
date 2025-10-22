@@ -132,9 +132,19 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
                     <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
                         <div className="flex justify-between text-sm text-gray-500 mb-2 flex-shrink-0">
                             <p><FaRegCalendar className="inline mr-1" /> {formatFecha(ej.fecha_creacion)}</p>
-                            <div className="flex items-center gap-2">
-                                <FaStar className="text-yellow-500" />
-                                <span className="font-semibold">{ej.estrellas || 0}</span>
+                            <div className="flex items-center gap-3">
+                                {/* Indicador de completado */}
+                                {ej.completado && (
+                                    <div className="flex items-center gap-1 text-success">
+                                        <FaCheckCircle className="text-success" />
+                                        <span className="font-semibold text-xs">Resuelto</span>
+                                    </div>
+                                )}
+                                {/* Estrellas */}
+                                <div className="flex items-center gap-1">
+                                    <FaStar className="text-yellow-500" />
+                                    <span className="font-semibold">{ej.estrellas || 0}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -185,18 +195,10 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
                     {/* Footer con botones modernos */}
                     <div className="card-actions p-4 border-t border-gray-200 flex-shrink-0">
                         <button
-                            className={`btn btn-wide flex items-center gap-2 ${ej.completado ? 'btn-success' : 'btn-primary'}`}
+                            className="btn btn-primary btn-wide flex items-center gap-2"
                             onClick={() => ResolverEjercicio(ej)}
                         >
-                            {ej.completado ? (
-                                <>
-                                    <FaCheckCircle className="text-lg" /> Resuelto
-                                </>
-                            ) : (
-                                <>
-                                    <FaCode className="text-lg" /> Resolver
-                                </>
-                            )}
+                            <FaCode className="text-lg" /> Resolver
                         </button>
                         <button
                             className={`btn btn-circle ml-auto ${ej.tiene_estrella ? 'btn-warning' : 'btn-outline btn-warning'}`}
