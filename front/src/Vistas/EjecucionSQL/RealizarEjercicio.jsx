@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import Navbar from '../../Componentes/Navbar';
 import { EstadoGlobalContexto } from '../../AuxS/EstadoGlobal'
 import { useToast } from '../../Componentes/ToastContext';
@@ -10,9 +10,29 @@ import './SQLEjecucion.css';
 import CustomTable from '../../AuxS/CustomTable';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
-import { FaDatabase, FaCode, FaPlay, FaCheckCircle, FaTimes, FaTable, FaRobot, FaEye, FaLightbulb, FaFile, FaHome } from 'react-icons/fa';
+import { FaDatabase, FaCode, FaPlay, FaCheckCircle, FaTimes, FaTable, FaRobot, FaEye, FaLightbulb, FaFile, FaHome, FaProjectDiagram, FaSearchPlus, FaSearchMinus, FaUndo } from 'react-icons/fa';
+import mermaid from 'mermaid';
 
 const RealizarEjercicio = ({ }) => {
+
+    // Inicializar Mermaid
+    useEffect(() => {
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            er: {
+                useMaxWidth: false,
+                fontSize: 14,
+                diagramPadding: 20
+            },
+            flowchart: {
+                useMaxWidth: false
+            }
+        });
+    }, []);
+
+    const mermaidRef = useRef(null);
 
     const handleCelebrate = () => {
         const end = Date.now() + 7 * 1000; // 15 segundos
@@ -79,6 +99,8 @@ const RealizarEjercicio = ({ }) => {
                 console.log('SQL Ejecutado:', response);
                 mostrarToast(response.data.message, 'success', 3000);
                 SetTablasSQLResultado(response.data.filas);
+                // Cambiar a la pestaña de output cuando se ejecuta SQL
+                setTabActiva('output');
                 // Registrar ejecución exitosa
                 apiClient.post('/ejericicios/RegistrarEjecucionSQL', {
                     ejercicioId: IdEjercicioResolver,
@@ -92,6 +114,8 @@ const RealizarEjercicio = ({ }) => {
                 mostrarToast('SQL Error: ' + errorDetalle, 'error', 3000);
                 // Limpiar la tabla de resultados cuando hay error
                 SetTablasSQLResultado('');
+                // Cambiar a la pestaña de output también en caso de error
+                setTabActiva('output');
                 // Registrar ejecución fallida con el error completo
                 apiClient.post('/ejericicios/RegistrarEjecucionSQL', {
                     ejercicioId: IdEjercicioResolver,
@@ -217,9 +241,141 @@ const RealizarEjercicio = ({ }) => {
         SetCargandoRespuestaIA(event.target.value)
     }
 
-    const [tabActiva, setTabActiva] = useState('problema');
+    const [tabActiva, setTabActiva] = useState('diagrama');
 
     const [erroresExpandidos, setErroresExpandidos] = useState({});
+
+    const [mostrarFeedback, setMostrarFeedback] = useState(false);
+
+    // Función para convertir SQL a Mermaid ERD
+    const convertirSQLaMermaid = (sqlInit) => {
+        if (!sqlInit) return '';
+
+        let mermaidCode = 'erDiagram\n';
+        const tablas = {};
+        const relaciones = [];
+
+        // Regex para extraer CREATE TABLE
+        const createTableRegex = /CREATE TABLE\s+(?:IF NOT EXISTS\s+)?`?(\w+)`?\s*\(([\s\S]*?)\);/gi;
+        let match;
+
+        while ((match = createTableRegex.exec(sqlInit)) !== null) {
+            const nombreTabla = match[1];
+            const contenido = match[2];
+
+            tablas[nombreTabla] = {
+                columnas: [],
+                pk: [],
+                fk: []
+            };
+
+            // Separar por comas pero no dentro de paréntesis
+            const lineas = contenido.split(/,(?![^()]*\))/);
+
+            lineas.forEach(linea => {
+                const lineaTrim = linea.trim();
+
+                // Detectar PRIMARY KEY constraint
+                const pkMatch = lineaTrim.match(/PRIMARY KEY\s*\(([^)]+)\)/i);
+                if (pkMatch) {
+                    const cols = pkMatch[1].split(',').map(c => c.trim().replace(/`/g, ''));
+                    tablas[nombreTabla].pk.push(...cols);
+                    return;
+                }
+
+                // Detectar FOREIGN KEY
+                const fkMatch = lineaTrim.match(/FOREIGN KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s*`?(\w+)`?\s*\(`?(\w+)`?\)/i);
+                if (fkMatch) {
+                    relaciones.push({
+                        desde: nombreTabla,
+                        columna: fkMatch[1],
+                        hasta: fkMatch[2],
+                        columnaRef: fkMatch[3]
+                    });
+                    tablas[nombreTabla].fk.push(fkMatch[1]);
+                    return;
+                }
+
+                // Parsear columna normal
+                const colMatch = lineaTrim.match(/`?(\w+)`?\s+(\w+(?:\(\d+(?:,\s*\d+)?\))?)(.*)/i);
+                if (colMatch) {
+                    const nombreCol = colMatch[1];
+                    const tipo = colMatch[2];
+                    const restricciones = colMatch[3] || '';
+
+                    // Determinar tipo simple
+                    let tipoSimple = tipo.toUpperCase();
+                    if (tipoSimple.includes('INT')) tipoSimple = 'int';
+                    else if (tipoSimple.includes('VARCHAR') || tipoSimple.includes('TEXT')) tipoSimple = 'string';
+                    else if (tipoSimple.includes('DECIMAL') || tipoSimple.includes('FLOAT')) tipoSimple = 'float';
+                    else if (tipoSimple.includes('DATE')) tipoSimple = 'date';
+                    else if (tipoSimple.includes('BOOL')) tipoSimple = 'bool';
+
+                    let isPK = restricciones.toUpperCase().includes('PRIMARY KEY');
+                    if (isPK) {
+                        tablas[nombreTabla].pk.push(nombreCol);
+                    }
+
+                    tablas[nombreTabla].columnas.push({
+                        nombre: nombreCol,
+                        tipo: tipoSimple,
+                        isPK: isPK
+                    });
+                }
+            });
+        }
+
+        // Generar código Mermaid
+        Object.keys(tablas).forEach(nombreTabla => {
+            const tabla = tablas[nombreTabla];
+
+            mermaidCode += `    ${nombreTabla} {\n`;
+
+            tabla.columnas.forEach(col => {
+                let atributos = [];
+                if (tabla.pk.includes(col.nombre)) atributos.push('PK');
+                if (tabla.fk.includes(col.nombre)) atributos.push('FK');
+
+                const atributosStr = atributos.length > 0 ? ` "${atributos.join(',')}"` : '';
+                mermaidCode += `        ${col.tipo} ${col.nombre}${atributosStr}\n`;
+            });
+
+            mermaidCode += `    }\n`;
+        });
+
+        // Agregar relaciones
+        relaciones.forEach(rel => {
+            // Formato: TABLA1 ||--o{ TABLA2 : "tiene"
+            // ||--o{ significa: uno a muchos
+            mermaidCode += `    ${rel.hasta} ||--o{ ${rel.desde} : "referencia"\n`;
+        });
+
+        return mermaidCode;
+    };
+
+    const [mermaidCode, setMermaidCode] = useState('');
+
+    const [zoomLevel, setZoomLevel] = useState(1);
+
+    const handleZoomIn = () => {
+        setZoomLevel(prev => Math.min(prev + 0.2, 3)); // Máximo 300%
+    };
+
+    const handleZoomOut = () => {
+        setZoomLevel(prev => Math.max(prev - 0.2, 0.3)); // Mínimo 30%
+    };
+
+    const handleZoomReset = () => {
+        setZoomLevel(1);
+    };
+
+    // Renderizar diagrama Mermaid cuando cambie el código
+    useEffect(() => {
+        if (mermaidCode && mermaidRef.current && tabActiva === 'diagrama') {
+            mermaidRef.current.innerHTML = mermaidCode;
+            mermaid.contentLoaded();
+        }
+    }, [mermaidCode, tabActiva]);
 
     // Función para parsear la respuesta de la IA y extraer los errores
     const parsearErroresIA = (respuesta) => {
@@ -299,6 +455,13 @@ const RealizarEjercicio = ({ }) => {
                         SetEstructuraDB(estructura);
                         SetDatosDB(db);
 
+                        // Generar Mermaid ERD para el diagrama
+                        if (db.sql_init) {
+                            const mermaidGenerado = convertirSQLaMermaid(db.sql_init);
+                            setMermaidCode(mermaidGenerado);
+                            console.log('Mermaid ERD generado:', mermaidGenerado);
+                        }
+
                         // Ejecutar query inicial
                         const primeraTabla = estructura[0]?.tablename;
                         if (primeraTabla) {
@@ -358,6 +521,7 @@ const RealizarEjercicio = ({ }) => {
         });
 
         SetCargandoRespuestaIA(true);
+        setMostrarFeedback(true);
 
         apiClient.post('/IA/PromptA', {
             contexto: DatosDB.sql_init,
@@ -422,119 +586,42 @@ const RealizarEjercicio = ({ }) => {
 
 
     return (
-        <div>
+        <div className='flex flex-col h-screen overflow-hidden'>
             <Navbar />
 
-            <div className='flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-4rem)] gap-2 p-2'>
-                {/* Columna Izquierda */}
-                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
-                    {/* Tablas disponibles en la DB */}
-                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
-                        <div className='flex justify-between gap-2 mb-2 flex-shrink-0'>
-                            <h3 className="flex-1 text-xl font-bold text-primary">Tablas Disponibles</h3>
-                            <div className="flex-1">
-                                <div className="form-control">
-                                    <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary select-sm">
-                                        {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
-                                            <option key={index} value={tabla.tablename}>
-                                                {tabla.tablename}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='flex-1 overflow-auto min-h-0'>
-                            <CustomTable itemsPerPage={10} data={TablaInicial} />
-                        </div>
-                    </div>
-
-                    {/* Información del ejercicio con tabs */}
-                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
-                        <div className="flex items-center gap-3 mb-3 flex-shrink-0">
-                            <h3 className="text-xl font-bold text-primary">Información del Ejercicio</h3>
-                        </div>
-
-                        <div className="flex-1 flex flex-col min-h-0">
-                            {/* Contenedor de tabs */}
-                            <div role="tablist" className="tabs tabs-boxed mb-2 flex-shrink-0 bg-base-200 flex-wrap">
-                                <button
-                                    className={`tab tab-sm sm:tab-md ${tabActiva === 'problema' ? 'tab-active' : ''}`}
-                                    onClick={() => setTabActiva('problema')}
-                                >
-                                    <FaLightbulb className="mr-1 hidden sm:inline" />
-                                    <span className="text-xs sm:text-sm">Problema</span>
-                                </button>
-                                <button
-                                    className={`tab tab-sm sm:tab-md ${tabActiva === 'contexto' ? 'tab-active' : ''}`}
-                                    onClick={() => setTabActiva('contexto')}
-                                >
-                                    <FaDatabase className="mr-1 hidden sm:inline" />
-                                    <span className="text-xs sm:text-sm">Contexto DB</span>
-                                </button>
-                                {MostrarTabla && (
-                                    <button
-                                        className={`tab tab-sm sm:tab-md ${tabActiva === 'tabla' ? 'tab-active' : ''}`}
-                                        onClick={() => setTabActiva('tabla')}
-                                    >
-                                        <FaTable className="mr-1 hidden sm:inline" />
-                                        <span className="text-xs sm:text-sm">Tabla Esperada</span>
-                                    </button>
-                                )}
-
-                            </div>
-
-                            {/* Contenido scrolleable */}
-                            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 rounded-lg p-4 border border-base-300 min-h-0">
-                                {tabActiva === 'problema' && (
-                                    <div className="w-full">
-                                        <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">
-                                            {ProblemaEjercicio}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {tabActiva === 'contexto' && (
-                                    <div className="w-full">
-                                        <p className="leading-relaxed text-xs sm:text-sm break-words whitespace-pre-wrap">
-                                            {DatosDB.descripcion}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {tabActiva === 'tabla' && MostrarTabla && (
-                                    <div className="w-full">
-                                        <CustomTable itemsPerPage={10} data={TablaSolucionEjercicio} />
-                                    </div>
-                                )}
-
-
-                            </div>
+            <div className='flex flex-col lg:h-[calc(100vh-4rem)] gap-2 p-2 overflow-y-auto'>
+                {/* FILA 1: Enunciado (10% alto en desktop, auto en mobile) */}
+                <div className='lg:h-[10%] min-h-[80px] flex flex-col rounded-lg p-4 shadow-lg bg-white flex-shrink-0'>
+                    <div className="flex items-center gap-3">
+                        <FaLightbulb className="text-primary text-2xl flex-shrink-0" />
+                        <div className="flex-1 overflow-y-auto">
+                            <h3 className="text-lg font-bold text-primary mb-1">Problema</h3>
+                            <p className="text-sm leading-relaxed">{ProblemaEjercicio}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Columna Derecha */}
-                <div className='w-full lg:w-1/2 flex flex-col gap-2'>
-                    {/* Editor SQL */}
-                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
+                {/* FILA 2: Editor SQL y Panel de pestañas - horizontal en desktop, vertical en mobile */}
+                <div className='lg:h-[50%] flex flex-col lg:flex-row gap-2 min-h-[300px] flex-shrink-0'>
+                    {/* Editor SQL izquierdo en desktop, arriba en mobile */}
+                    <div className='w-full lg:w-1/2 h-[400px] lg:h-full flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
-                            <h3 className="text-xl font-bold text-primary">Editor SQL</h3>
-
-                            <div className='flex flex-row gap-2'>
-                                <button className='btn btn-primary btn-sm shadow-lg' onClick={() => AbrirAyudaIA()}>
-                                    <FaLightbulb className="mr-1" />
-                                    Revisar IA
-                                </button>
-
-                                <button onClick={() => EjecutarSQL()} className='btn btn-secondary btn-sm shadow-lg'>
+                            <h3 className="text-lg sm:text-xl font-bold text-primary">Editor SQL</h3>
+                            <div className='flex gap-2'>
+                                <button onClick={() => EjecutarSQL()} className='btn btn-secondary btn-xs sm:btn-sm'>
                                     <FaPlay className="mr-1" />
-                                    <span className="hidden sm:inline">Ejecutar SQL</span>
+                                    <span className="hidden sm:inline">Ejecutar</span>
+                                    <span className="sm:hidden">Exec</span>
+                                </button>
+                                <button onClick={() => CrearRespuesta()} className='btn btn-primary btn-xs sm:btn-sm'>
+                                    <FaCheckCircle className="mr-1" />
+                                    <span className="sm:inline">Revisar respuesta</span>
+                                    <span className="sm:hidden">Check</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div className='flex-1 overflow-auto min-h-0'>
+                        <div className='flex-1 overflow-auto'>
                             <CodeMirror
                                 className='h-full'
                                 value={SQLEjecutar}
@@ -546,24 +633,243 @@ const RealizarEjercicio = ({ }) => {
                         </div>
                     </div>
 
-                    {/* Resultados de ejecución */}
-                    <div className='h-[300px] lg:h-1/2 min-h-[300px] flex flex-col rounded-lg p-3 overflow-hidden shadow-lg bg-white'>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
-                            <h3 className="text-xl font-bold text-primary">Resultado de Ejecución</h3>
-                            <div className='flex flex-row gap-2'>
-                                <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error btn-sm shadow-lg'>
-                                    <FaTimes className="mr-1" />
-                                    <span className="hidden sm:inline">Salir</span>
+                    {/* Panel de pestañas derecho en desktop, abajo en mobile */}
+                    <div className='w-full lg:w-1/2 h-[400px] lg:h-full flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
+                        <div role="tablist" className="tabs tabs-boxed mb-2 flex-shrink-0 bg-base-200 flex-wrap">
+                            <button
+                                className={`tab tab-xs sm:tab-sm ${tabActiva === 'diagrama' ? 'tab-active' : ''}`}
+                                onClick={() => setTabActiva('diagrama')}
+                            >
+                                <FaProjectDiagram className="mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Diagrama</span>
+                            </button>
+                            <button
+                                className={`tab tab-xs sm:tab-sm ${tabActiva === 'tablas' ? 'tab-active' : ''}`}
+                                onClick={() => setTabActiva('tablas')}
+                            >
+                                <FaTable className="mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Tablas</span>
+                            </button>
+                            <button
+                                className={`tab tab-xs sm:tab-sm ${tabActiva === 'contexto' ? 'tab-active' : ''}`}
+                                onClick={() => setTabActiva('contexto')}
+                            >
+                                <FaDatabase className="mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Contexto</span>
+                            </button>
+                            <button
+                                className={`tab tab-xs sm:tab-sm ${tabActiva === 'output' ? 'tab-active' : ''}`}
+                                onClick={() => setTabActiva('output')}
+                            >
+                                <FaEye className="mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Output</span>
+                            </button>
+                            {MostrarTabla && (
+                                <button
+                                    className={`tab tab-xs sm:tab-sm ${tabActiva === 'esperada' ? 'tab-active' : ''}`}
+                                    onClick={() => setTabActiva('esperada')}
+                                >
+                                    <FaCheckCircle className="mr-1 sm:mr-2" />
+                                    <span className="text-xs sm:text-sm">Esperada</span>
                                 </button>
-                                <button onClick={() => CrearRespuesta()} className='btn btn-primary btn-sm shadow-lg'>
-                                    <FaCheckCircle className="mr-1" />
-                                    <span className="hidden sm:inline">Comprobar</span>
+                            )}
+                        </div>
+
+                        <div className="flex-1 overflow-hidden bg-base-100 rounded-lg border border-base-300">
+                            {tabActiva === 'diagrama' && (
+                                <div className="h-full w-full flex flex-col bg-white relative">
+                                    {/* Controles de Zoom */}
+                                    <div className="absolute top-2 right-2 z-10 flex gap-1 bg-white rounded-lg shadow-lg border border-base-300 p-1">
+                                        <button
+                                            onClick={handleZoomIn}
+                                            className="btn btn-xs btn-ghost"
+                                            title="Acercar"
+                                        >
+                                            <FaSearchPlus />
+                                        </button>
+                                        <button
+                                            onClick={handleZoomReset}
+                                            className="btn btn-xs btn-ghost"
+                                            title="Restablecer zoom"
+                                        >
+                                            <FaUndo />
+                                        </button>
+                                        <button
+                                            onClick={handleZoomOut}
+                                            className="btn btn-xs btn-ghost"
+                                            title="Alejar"
+                                        >
+                                            <FaSearchMinus />
+                                        </button>
+                                        <span className="btn btn-xs btn-ghost pointer-events-none">
+                                            {Math.round(zoomLevel * 100)}%
+                                        </span>
+                                    </div>
+
+                                    {/* Área del diagrama con scroll */}
+                                    <div className="flex-1 overflow-auto p-4">
+                                        {mermaidCode ? (
+                                            <div
+                                                className="min-w-max min-h-max flex items-start justify-center"
+                                                style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
+                                            >
+                                                <div className="mermaid" ref={mermaidRef}>
+                                                    {mermaidCode}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full">
+                                                <div className="text-center opacity-50">
+                                                    <FaProjectDiagram className="text-4xl mx-auto mb-2" />
+                                                    <p className="text-sm">Generando diagrama de base de datos...</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {tabActiva === 'tablas' && (
+                                <div className="h-full flex flex-col p-3">
+                                    <div className="form-control mb-2 flex-shrink-0">
+                                        <select onChange={manejarCambio} defaultValue="" className="select select-bordered select-primary select-sm">
+                                            {EstructuraDB.length !== 0 && EstructuraDB.map((tabla, index) => (
+                                                <option key={index} value={tabla.tablename}>
+                                                    {tabla.tablename}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className='flex-1 overflow-auto'>
+                                        <CustomTable itemsPerPage={10} data={TablaInicial} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {tabActiva === 'contexto' && (
+                                <div className="h-full overflow-y-auto p-4">
+                                    <p className="leading-relaxed text-sm whitespace-pre-wrap">
+                                        {DatosDB.descripcion}
+                                    </p>
+                                </div>
+                            )}
+
+                            {tabActiva === 'output' && (
+                                <div className="h-full overflow-auto p-3">
+                                    <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
+                                </div>
+                            )}
+
+                            {tabActiva === 'esperada' && MostrarTabla && (
+                                <div className="h-full overflow-auto p-3">
+                                    <CustomTable itemsPerPage={10} data={TablaSolucionEjercicio} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* FILA 3: Feedback de IA (40% alto en desktop, auto en mobile) */}
+                <div className='lg:h-[40%] min-h-[300px] flex flex-col rounded-lg p-3 sm:p-4 shadow-lg bg-white overflow-hidden flex-shrink-0'>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2 flex-shrink-0">
+                        <h3 className="text-lg sm:text-xl font-bold text-primary flex items-center gap-2">
+                            <FaRobot />
+                            Feedback de IA
+                        </h3>
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={() => EnviarMensajeIA()} className='btn btn-primary btn-xs sm:btn-sm'>
+                                <FaLightbulb className="mr-1" />
+                                <span className="hidden sm:inline">Revisar con IA</span>
+                                <span className="sm:hidden">Revisar</span>
+                            </button>
+                            {mostrarFeedback && (
+                                <button onClick={() => {
+                                    setMostrarFeedback(false);
+                                    SetRespuestaIA('');
+                                }} className='btn btn-ghost btn-xs sm:btn-sm'>
+                                    <FaTimes />
                                 </button>
+                            )}
+                            {/* <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error btn-xs sm:btn-sm'>
+                                <FaHome className="mr-1" />
+                                <span className="hidden sm:inline">Salir</span>
+                                <span className="sm:hidden">Salir</span>
+                            </button> */}
+                        </div>
+                    </div>
+
+                    <div className='flex-1 overflow-y-auto bg-base-100 rounded-lg p-3 sm:p-4 border border-base-300'>
+                        {!mostrarFeedback && !CargandoRespuestaIA && (
+                            <div className="flex flex-col items-center justify-center h-full text-center opacity-50 px-4">
+                                <FaRobot className="text-4xl sm:text-6xl mb-4" />
+                                <p className="text-sm sm:text-lg">Haz clic en "Revisar con IA" para obtener feedback sobre tu consulta SQL</p>
                             </div>
-                        </div>
-                        <div className='flex-1 overflow-auto min-h-0'>
-                            <CustomTable itemsPerPage={10} data={TablasSQLResultado} />
-                        </div>
+                        )}
+
+                        {CargandoRespuestaIA ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                                    <span className="text-sm sm:text-lg">Analizando tu consulta SQL...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            mostrarFeedback && RespuestaIA && (() => {
+                                const errores = parsearErroresIA(RespuestaIA);
+
+                                if (errores.length === 0) {
+                                    return (
+                                        <div className="p-4 sm:p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <FaCheckCircle className="text-2xl sm:text-3xl text-success flex-shrink-0" />
+                                                <div>
+                                                    <h4 className="font-bold text-base sm:text-lg text-success">¡Excelente trabajo!</h4>
+                                                    <p className="text-xs sm:text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <FaLightbulb className="text-warning text-lg sm:text-xl" />
+                                            <h4 className="font-bold text-base sm:text-lg">Errores identificados: {errores.length}</h4>
+                                        </div>
+
+                                        {errores.map((error, index) => (
+                                            <div
+                                                key={index}
+                                                className="collapse collapse-arrow bg-base-200 border border-base-300 shadow-md hover:shadow-lg transition-all"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={erroresExpandidos[index] || false}
+                                                    onChange={() => toggleError(index)}
+                                                />
+                                                <div className="collapse-title font-medium flex items-start gap-2 sm:gap-3 text-sm sm:text-base">
+                                                    <span className="badge badge-error badge-sm sm:badge-lg">{error.numero}</span>
+                                                    <div className="flex-1">
+                                                        <span className="font-bold text-error">{error.tipo}</span>
+                                                        <p className="text-xs sm:text-sm opacity-80 mt-1">{error.descripcion}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="collapse-content bg-base-100">
+                                                    <div className="pt-4 pl-2 border-l-4 border-warning">
+                                                        <p className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-2">
+                                                            <FaLightbulb className="text-warning" />
+                                                            ¿Por qué es un error?
+                                                        </p>
+                                                        <p className="text-xs sm:text-sm leading-relaxed">{error.explicacion}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()
+                        )}
                     </div>
                 </div>
             </div>
@@ -582,92 +888,6 @@ const RealizarEjercicio = ({ }) => {
                     <button>close</button>
                 </form>
             </dialog>
-
-
-            <dialog id="AyudaIA" className="modal">
-                <div className="modal-box w-11/12 max-w-5xl">
-                    <h3 className="font-bold text-lg text-primary">Revisar respuesta con IA</h3>
-
-                    <p className="p-4 opacity-50">Esta es una ayuda que te mostrara tus errores sin decir la respuesta</p>
-
-                    <button onClick={() => EnviarMensajeIA()} className='btn btn-primary'>
-                        Revisar ahora
-                        <FaCheckCircle className="ml-1" />
-                    </button>
-
-                    {/* Mostrar en texto plano la respuesta de la ia */}
-
-                    {CargandoRespuestaIA ? (
-                        <div className="flex items-center justify-center mt-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                            <span className="ml-2">Cargando respuesta de IA...</span>
-                        </div>
-                    ) : (
-                        RespuestaIA && (() => {
-                            const errores = parsearErroresIA(RespuestaIA);
-
-                            if (errores.length === 0) {
-                                return (
-                                    <div className="mt-4 p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <FaCheckCircle className="text-3xl " />
-                                            <div>
-                                                <h4 className="font-bold text-lg ">¡Excelente trabajo!</h4>
-                                                <p className="text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div className="mt-4 space-y-3">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <FaLightbulb className="text-warning text-xl" />
-                                        <h4 className="font-bold text-lg">Errores identificados: {errores.length}</h4>
-                                    </div>
-
-                                    {errores.map((error, index) => (
-                                        <div
-                                            key={index}
-                                            className="collapse collapse-arrow bg-base-200 border border-base-300 shadow-md hover:shadow-lg transition-all"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={erroresExpandidos[index] || false}
-                                                onChange={() => toggleError(index)}
-                                            />
-                                            <div className="collapse-title font-medium flex items-start gap-3">
-                                                <span className="badge badge-error badge-lg">{error.numero}</span>
-                                                <div className="flex-1">
-                                                    <span className="font-bold text-error">{error.tipo}</span>
-                                                    <p className="text-sm opacity-80 mt-1">{error.descripcion}</p>
-                                                </div>
-                                            </div>
-                                            <div className="collapse-content bg-base-100">
-                                                <div className="pt-4 pl-2 border-l-4 border-warning">
-                                                    <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                                        <FaLightbulb className="text-warning" />
-                                                        ¿Por qué es un error?
-                                                    </p>
-                                                    <p className="text-sm leading-relaxed">{error.explicacion}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })()
-                    )}
-
-
-
-                    <div className="modal-action">
-                        <button onClick={() => CerrarAyudaIA()} className='btn btn-primary'>Minimizar</button>
-                    </div>
-                </div>
-            </dialog>
-
         </div>
     )
 }
