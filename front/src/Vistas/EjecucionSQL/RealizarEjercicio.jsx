@@ -404,33 +404,129 @@ const RealizarEjercicio = ({ }) => {
     const parsearErroresIA = (respuesta) => {
         if (!respuesta) return [];
 
-        // Verificar si explícitamente dice que no hay errores
-        if (respuesta.toLowerCase().includes('no hay error encontrado') ||
-            respuesta.toLowerCase().includes('no se encontró ningún error')) {
+        const errores = [];
+
+        // Lista de patrones de mayor a menor especificidad
+        const patrones = [
+            // Patrón 1: Con guion y dos puntos en "Por qué"
+            // "1. Error lógico: descripción\n   - ¿Por qué es un error?: explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*[-–—•]\s*¿?Por\s*qué\s*es\s*un\s*error\??:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 2: Sin guion pero con dos puntos
+            // "1. Error lógico: descripción\n   ¿Por qué es un error?: explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*¿?Por\s*qué\s*es\s*un\s*error\??:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 3: Con "Explicación:" o "Razón:" en lugar de "Por qué"
+            // "1. Error lógico: descripción\n   Explicación: explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*[-–—•]?\s*(?:Explicación|Razón|Detalle)s?:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 4: Formato compacto todo en una línea
+            // "1. Error lógico: descripción. Explicación: explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^.]+)\.\s*(?:¿?Por\s*qué\s*es\s*un\s*error\??:?|Explicación:|Razón:)\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 5: Con salto de línea doble
+            // "1. Error lógico: descripción\n\n¿Por qué es un error? explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\n\s*¿?Por\s*qué\s*es\s*un\s*error\??\s*:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 6: Formato simple sin "Por qué es un error"
+            // "1. Error lógico: descripción completa con explicación"
+            /(\d+)\.\s*([^:]+?):\s*(.+?)(?=\n\d+\.|\n\n|$)/gi,
+
+            // Patrón 7: Formato con asteriscos o viñetas
+            // "* Error lógico: descripción\n  Explicación: explicación"
+            /[*•]\s*([^:]+?):\s*([^\n]+?)\s*\n\s*[-–—•]?\s*(?:¿?Por\s*qué\s*es\s*un\s*error\??:?|Explicación:|Razón:)\s*([^\n]+(?:\n(?![*•]|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 8: Formato con "Error N" al inicio
+            // "Error 1 - Tipo: Error lógico\nDescripción: descripción\nExplicación: explicación"
+            /Error\s+(\d+)\s*[-–—]\s*Tipo:\s*([^\n]+)\s*\n\s*Descripción:\s*([^\n]+)\s*\n\s*(?:Explicación|Razón):\s*([^\n]+(?:\n(?!Error\s+\d+|\n\n)[^\n]+)*)/gi,
+
+            // Patrón 9: Formato JSON-like
+            // "1. { tipo: "Error lógico", descripción: "...", explicación: "..." }"
+            /(\d+)\.\s*\{\s*tipo:\s*"([^"]+)"\s*,\s*descripción:\s*"([^"]+)"\s*,\s*(?:explicación|razón):\s*"([^"]+)"\s*\}/gi,
+
+            // Patrón 10: Formato con ">>>" o similar
+            // "1. Error lógico: descripción\n>>> Explicación: explicación"
+            /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*>>>?\s*(?:¿?Por\s*qué\s*es\s*un\s*error\??:?|Explicación:|Razón:)\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi
+        ];
+
+        // Intentar con cada patrón hasta encontrar coincidencias
+        for (const regex of patrones) {
+            let match;
+            const tempErrores = [];
+
+            // Resetear el índice del regex
+            regex.lastIndex = 0;
+
+            while ((match = regex.exec(respuesta)) !== null) {
+                // Dependiendo del patrón, los grupos pueden estar en diferentes posiciones
+                if (match.length >= 4) {
+                    tempErrores.push({
+                        numero: match[1] || String(tempErrores.length + 1),
+                        tipo: (match[2] || 'Error').trim(),
+                        descripcion: (match[3] || '').trim(),
+                        explicacion: (match[4] || match[3] || '').trim().replace(/\s+/g, ' ')
+                    });
+                }
+            }
+
+            // Si encontró errores con este patrón, retornarlos
+            if (tempErrores.length > 0) {
+                console.log('✅ Parseador - Patrón exitoso:', patrones.indexOf(regex) + 1);
+                return tempErrores;
+            }
+        }
+
+        // Último intento: buscar líneas que empiecen con número y dos puntos
+        // Sin importar el formato de la explicación
+        const fallbackRegex = /(\d+)\.\s*(.+?)(?=\n\d+\.|\n\n|$)/gs;
+        let match;
+
+        while ((match = fallbackRegex.exec(respuesta)) !== null) {
+            const contenido = match[2].trim();
+
+            // Intentar separar tipo y descripción
+            const separadorIndex = contenido.indexOf(':');
+            if (separadorIndex > 0 && separadorIndex < 100) {
+                errores.push({
+                    numero: match[1],
+                    tipo: contenido.substring(0, separadorIndex).trim(),
+                    descripcion: contenido.substring(separadorIndex + 1).trim(),
+                    explicacion: contenido.substring(separadorIndex + 1).trim()
+                });
+            } else {
+                errores.push({
+                    numero: match[1],
+                    tipo: 'Error',
+                    descripcion: contenido,
+                    explicacion: contenido
+                });
+            }
+        }
+
+        if (errores.length > 0) {
+            console.log('⚠️ Parseador - Usando patrón de respaldo');
+            return errores;
+        }
+
+        // Solo al final, verificar si explícitamente dice que no hay errores
+        const noErroresPatterns = [
+            'no hay error encontrado',
+            'no se encontró ningún error',
+            'no se encontraron errores',
+            'consulta correcta',
+            'consulta está correcta',
+            'no hay errores',
+            'sin errores',
+            'la consulta es correcta'
+        ];
+
+        const respuestaLower = respuesta.toLowerCase();
+        if (noErroresPatterns.some(pattern => respuestaLower.includes(pattern))) {
+            console.log('✅ Parseador - La IA indica que no hay errores');
             return [];
         }
 
-        const errores = [];
-
-        // Patrón flexible que captura TODO lo que está entre el número y los dos puntos
-        // Ejemplos que captura:
-        // - "1. Lógico:"
-        // - "1. Error Lógico:"
-        // - "1. Error de Sintaxis:"
-        // - "1. Sintaxis:"
-        // - "1. Conceptual:"
-        const regex = /(\d+)\.\s*([^:]+?):\s*([^\n]+?)\s*\n\s*[-–—]\s*¿?Por\s*qué\s*es\s*un\s*error\??:?\s*([^\n]+(?:\n(?!\d+\.|\n\n)[^\n]+)*)/gi;
-
-        let match;
-        while ((match = regex.exec(respuesta)) !== null) {
-            errores.push({
-                numero: match[1],
-                tipo: match[2].trim(),
-                descripcion: match[3].trim(),
-                explicacion: match[4].trim().replace(/\s+/g, ' ')
-            });
-        }
-
+        console.log('❌ Parseador - No se pudieron extraer errores');
         return errores;
     };
 
@@ -707,7 +803,7 @@ const RealizarEjercicio = ({ }) => {
                                                         <FaCheckCircle className="text-2xl text-neutral-content sm:text-3xl flex-shrink-0" />
                                                         <div>
                                                             <h4 className="font-bold text-neutral-content sm:text-lg">¡Excelente trabajo!</h4>
-                                                            <p className="text-xs text-neutral-content sm:text-sm text-neutral-content opacity-70">No se encontraron errores en tu consulta SQL.</p>
+                                                            <p className="text-xs sm:text-sm text-neutral-content opacity-70">No se encontraron errores en tu consulta SQL.</p>
                                                         </div>
                                                     </div>
                                                 </div>
