@@ -93,6 +93,11 @@ const RealizarEjercicio = ({ }) => {
     }
 
     const EjecutarSQL = () => {
+        if (SQLEjecutar === '') {
+            mostrarToast('Por favor, ingrese una consulta SQL válida.', 'error', 3000);
+            return;
+        }
+
         console.log('Ejecutar SQL', SQLEjecutar);
         apiClient.post('/basedatos/EjecutarQuery', { dbId: IDDBSeleccionadaEjercicio, query: SQLEjecutar })
             .then(response => {
@@ -107,6 +112,24 @@ const RealizarEjercicio = ({ }) => {
                     sqlQuery: SQLEjecutar,
                     resultado: 'Exitoso'
                 });
+
+                // Después de ejecutar, revisar automáticamente la respuesta
+                apiClient.post('/ejericicios/RevisarRespuesta', {
+                    ejercicioId: IdEjercicioResolver,
+                    sqlIntento: SQLEjecutar,
+                    Tabla_Usuario: response.data.filas
+                })
+                    .then(revisionResponse => {
+                        console.log('Respuesta de la API:', revisionResponse);
+                        if (revisionResponse.data.esCorrecto === true) {
+                            AbrirPopUPCorrecto();
+                        } else {
+                            mostrarToast('Respuesta incorrecta, vuelve a intentarlo!', 'error', 3000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al revisar respuesta:', error.response?.data?.error);
+                    });
             })
             .catch(error => {
                 console.error('Error del backend:', error.response.data.error);
@@ -590,50 +613,151 @@ const RealizarEjercicio = ({ }) => {
             <Navbar />
 
             <div className='flex flex-col lg:h-[calc(100vh-4rem)] gap-2 p-2 overflow-y-auto'>
-                {/* FILA 1: Enunciado (10% alto en desktop, auto en mobile) */}
-                <div className='lg:h-[10%] min-h-[80px] flex flex-col rounded-lg p-4 shadow-lg bg-white flex-shrink-0'>
+                {/* FILA 1: Enunciado (8% alto en desktop, auto en mobile) */}
+                <div className='lg:h-[8%] min-h-[80px] flex flex-col rounded-lg p-4 shadow-lg bg-white flex-shrink-0'>
                     <div className="flex items-center gap-3">
-                        <FaLightbulb className="text-primary text-2xl flex-shrink-0" />
                         <div className="flex-1 overflow-y-auto">
-                            <h3 className="text-lg font-bold text-primary mb-1">Problema</h3>
+                            <h3 className="text-lg font-bold text-primary">Problema</h3>
                             <p className="text-sm leading-relaxed">{ProblemaEjercicio}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* FILA 2: Editor SQL y Panel de pestañas - horizontal en desktop, vertical en mobile */}
-                <div className='lg:h-[50%] flex flex-col lg:flex-row gap-2 min-h-[300px] flex-shrink-0'>
-                    {/* Editor SQL izquierdo en desktop, arriba en mobile */}
-                    <div className='w-full lg:w-1/2 h-[400px] lg:h-full flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
-                            <h3 className="text-lg sm:text-xl font-bold text-primary">Editor SQL</h3>
-                            <div className='flex gap-2'>
-                                <button onClick={() => EjecutarSQL()} className='btn btn-secondary btn-xs sm:btn-sm'>
-                                    <FaPlay className="mr-1" />
-                                    <span className="hidden sm:inline">Ejecutar</span>
-                                    <span className="sm:hidden">Exec</span>
-                                </button>
-                                <button onClick={() => CrearRespuesta()} className='btn btn-primary btn-xs sm:btn-sm'>
-                                    <FaCheckCircle className="mr-1" />
-                                    <span className="sm:inline">Revisar respuesta</span>
-                                    <span className="sm:hidden">Check</span>
-                                </button>
+                {/* FILA 2: Layout 2x2 - Columna izquierda (Editor + IA) | Columna derecha (Pestañas) */}
+                <div className='lg:h-[92%] flex flex-col lg:flex-row gap-2 min-h-[300px] flex-shrink-0'>
+                    {/* COLUMNA IZQUIERDA: Editor SQL arriba, Feedback IA abajo */}
+                    <div className='w-full lg:w-1/2 flex flex-col gap-2'>
+                        {/* Editor SQL */}
+                        <div className='h-[400px] lg:h-1/2 flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                                <h3 className="text-lg sm:text-xl font-bold text-primary">Editor SQL</h3>
+                                <div className='flex gap-2'>
+                                    <button onClick={() => EjecutarSQL()} className='btn btn-primary btn-xs sm:btn-sm'>
+                                        <FaPlay className="mr-1" />
+                                        <span className="hidden sm:inline">Ejecutar y Revisar</span>
+                                        <span className="sm:hidden">Ejecutar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className='flex-1 overflow-auto'>
+                                <CodeMirror
+                                    className='h-full'
+                                    value={SQLEjecutar}
+                                    placeholder={"SELECT * FROM tabla WHERE condicion;"}
+                                    onChange={(value) => SetSQLEjecutar(value)}
+                                    height='100%'
+                                    extensions={[sql()]}
+                                />
                             </div>
                         </div>
 
-                        <div className='flex-1 overflow-auto'>
-                            <CodeMirror
-                                className='h-full'
-                                value={SQLEjecutar}
-                                placeholder={"SELECT * FROM tabla WHERE condicion;"}
-                                onChange={(value) => SetSQLEjecutar(value)}
-                                height='100%'
-                                extensions={[sql()]}
-                            />
+                        {/* Feedback IA */}
+                        <div className='h-[400px] lg:h-1/2 flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2 flex-shrink-0">
+                                <h3 className="text-lg sm:text-xl font-bold text-primary flex items-center gap-2">
+                                    <FaRobot />
+                                    Feedback IA
+                                </h3>
+                                {MostrarIA && (
+                                    <div className="flex gap-2 flex-wrap">
+                                        <button onClick={() => EnviarMensajeIA()} className='btn btn-primary btn-xs sm:btn-sm'>
+                                            <FaLightbulb className="mr-1" />
+                                            <span className="hidden sm:inline">Revisar con IA</span>
+                                            <span className="sm:hidden">Revisar</span>
+                                        </button>
+                                        {mostrarFeedback && (
+                                            <button onClick={() => {
+                                                setMostrarFeedback(false);
+                                                SetRespuestaIA('');
+                                            }} className='btn btn-ghost btn-xs sm:btn-sm'>
+                                                <FaTimes />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className='flex-1 overflow-auto bg-base-100 rounded-lg border border-base-300 p-3'>
+                                {!MostrarIA ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center opacity-50 px-4">
+                                        <FaRobot className="text-4xl sm:text-6xl mb-4" />
+                                        <p className="text-sm sm:text-lg">Este ejercicio no tiene asistencia de IA disponible</p>
+                                    </div>
+                                ) : !mostrarFeedback && !CargandoRespuestaIA ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center opacity-50 px-4">
+                                        <FaRobot className="text-4xl sm:text-6xl mb-4" />
+                                        <p className="text-sm sm:text-lg">Haz clic en "Revisar con IA" para obtener feedback sobre tu consulta SQL</p>
+                                    </div>
+                                ) : CargandoRespuestaIA ? (
+                                    <div className="flex items-center justify-center h-full">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                                            <span className="text-sm sm:text-lg">Analizando tu consulta SQL...</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    mostrarFeedback && RespuestaIA && (() => {
+                                        const errores = parsearErroresIA(RespuestaIA);
+
+                                        if (errores.length === 0) {
+                                            return (
+                                                <div className="p-4 sm:p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
+                                                    <div className="flex items-center gap-3">
+                                                        <FaCheckCircle className="text-2xl sm:text-3xl flex-shrink-0" />
+                                                        <div>
+                                                            <h4 className="font-bold text-base sm:text-lg">¡Excelente trabajo!</h4>
+                                                            <p className="text-xs sm:text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <FaLightbulb className="text-warning text-lg sm:text-xl" />
+                                                    <h4 className="font-bold text-base sm:text-lg">Errores identificados: {errores.length}</h4>
+                                                </div>
+
+                                                {errores.map((error, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="collapse collapse-arrow bg-base-200 border border-base-300 shadow-md hover:shadow-lg transition-all"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={erroresExpandidos[index] || false}
+                                                            onChange={() => toggleError(index)}
+                                                        />
+                                                        <div className="collapse-title font-medium flex items-start gap-2 sm:gap-3 text-sm sm:text-base">
+                                                            <span className="badge badge-error badge-sm sm:badge-lg">{error.numero}</span>
+                                                            <div className="flex-1">
+                                                                <span className="font-bold text-error">{error.tipo}</span>
+                                                                <p className="text-xs sm:text-sm opacity-80 mt-1">{error.descripcion}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="collapse-content bg-base-100">
+                                                            <div className="pt-4 pl-2 border-l-4 border-warning">
+                                                                <p className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-2">
+                                                                    <FaLightbulb className="text-warning" />
+                                                                    ¿Por qué es un error?
+                                                                </p>
+                                                                <p className="text-xs sm:text-sm leading-relaxed">{error.explicacion}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Panel de pestañas derecho en desktop, abajo en mobile */}
+                    {/* COLUMNA DERECHA: Panel de pestañas a altura completa */}
                     <div className='w-full lg:w-1/2 h-[400px] lg:h-full flex flex-col rounded-lg p-3 shadow-lg bg-white overflow-hidden'>
                         <div role="tablist" className="tabs tabs-boxed mb-2 flex-shrink-0 bg-base-200 flex-wrap">
                             <button
@@ -766,110 +890,6 @@ const RealizarEjercicio = ({ }) => {
                                 </div>
                             )}
                         </div>
-                    </div>
-                </div>
-
-                {/* FILA 3: Feedback de IA (40% alto en desktop, auto en mobile) */}
-                <div className='lg:h-[40%] min-h-[300px] flex flex-col rounded-lg p-3 sm:p-4 shadow-lg bg-white overflow-hidden flex-shrink-0'>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2 flex-shrink-0">
-                        <h3 className="text-lg sm:text-xl font-bold text-primary flex items-center gap-2">
-                            <FaRobot />
-                            Feedback de IA
-                        </h3>
-                        <div className="flex gap-2 flex-wrap">
-                            <button onClick={() => EnviarMensajeIA()} className='btn btn-primary btn-xs sm:btn-sm'>
-                                <FaLightbulb className="mr-1" />
-                                <span className="hidden sm:inline">Revisar con IA</span>
-                                <span className="sm:hidden">Revisar</span>
-                            </button>
-                            {mostrarFeedback && (
-                                <button onClick={() => {
-                                    setMostrarFeedback(false);
-                                    SetRespuestaIA('');
-                                }} className='btn btn-ghost btn-xs sm:btn-sm'>
-                                    <FaTimes />
-                                </button>
-                            )}
-                            {/* <button onClick={() => CancelarCreacionDERespuesta()} className='btn btn-error btn-xs sm:btn-sm'>
-                                <FaHome className="mr-1" />
-                                <span className="hidden sm:inline">Salir</span>
-                                <span className="sm:hidden">Salir</span>
-                            </button> */}
-                        </div>
-                    </div>
-
-                    <div className='flex-1 overflow-y-auto bg-base-100 rounded-lg p-3 sm:p-4 border border-base-300'>
-                        {!mostrarFeedback && !CargandoRespuestaIA && (
-                            <div className="flex flex-col items-center justify-center h-full text-center opacity-50 px-4">
-                                <FaRobot className="text-4xl sm:text-6xl mb-4" />
-                                <p className="text-sm sm:text-lg">Haz clic en "Revisar con IA" para obtener feedback sobre tu consulta SQL</p>
-                            </div>
-                        )}
-
-                        {CargandoRespuestaIA ? (
-                            <div className="flex items-center justify-center h-full">
-                                <div className="flex flex-col items-center gap-3">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                                    <span className="text-sm sm:text-lg">Analizando tu consulta SQL...</span>
-                                </div>
-                            </div>
-                        ) : (
-                            mostrarFeedback && RespuestaIA && (() => {
-                                const errores = parsearErroresIA(RespuestaIA);
-
-                                if (errores.length === 0) {
-                                    return (
-                                        <div className="p-4 sm:p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
-                                            <div className="flex items-center gap-3">
-                                                <FaCheckCircle className="text-2xl sm:text-3xl flex-shrink-0" />
-                                                <div>
-                                                    <h4 className="font-bold text-base sm:text-lg">¡Excelente trabajo!</h4>
-                                                    <p className="text-xs sm:text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-
-                                return (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <FaLightbulb className="text-warning text-lg sm:text-xl" />
-                                            <h4 className="font-bold text-base sm:text-lg">Errores identificados: {errores.length}</h4>
-                                        </div>
-
-                                        {errores.map((error, index) => (
-                                            <div
-                                                key={index}
-                                                className="collapse collapse-arrow bg-base-200 border border-base-300 shadow-md hover:shadow-lg transition-all"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={erroresExpandidos[index] || false}
-                                                    onChange={() => toggleError(index)}
-                                                />
-                                                <div className="collapse-title font-medium flex items-start gap-2 sm:gap-3 text-sm sm:text-base">
-                                                    <span className="badge badge-error badge-sm sm:badge-lg">{error.numero}</span>
-                                                    <div className="flex-1">
-                                                        <span className="font-bold text-error">{error.tipo}</span>
-                                                        <p className="text-xs sm:text-sm opacity-80 mt-1">{error.descripcion}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="collapse-content bg-base-100">
-                                                    <div className="pt-4 pl-2 border-l-4 border-warning">
-                                                        <p className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-2">
-                                                            <FaLightbulb className="text-warning" />
-                                                            ¿Por qué es un error?
-                                                        </p>
-                                                        <p className="text-xs sm:text-sm leading-relaxed">{error.explicacion}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            })()
-                        )}
                     </div>
                 </div>
             </div>

@@ -9,6 +9,11 @@ services:
       - ./back:/app
     env_file:
       - .env
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   front:
     build:
@@ -20,6 +25,8 @@ services:
       - ./front:/app
     env_file:
       - .env
+    networks:
+      - app-network
 
   postgres:
     image: postgres:17
@@ -30,7 +37,8 @@ services:
       - ./DB/init.sql:/docker-entrypoint-initdb.d/init.sql
     env_file:
       - .env
-
+    networks:
+      - app-network
 
   
   postgres-usuarios:
@@ -42,6 +50,8 @@ services:
       - ./DB-Usuarios/init.sh:/docker-entrypoint-initdb.d/init.sh
     env_file:
       - .env
+    networks:
+      - app-network
 
   adminer:
     image: adminer
@@ -50,7 +60,12 @@ services:
       - ${ADMINER_PORT}:${ADMINER_PORT}
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - app-network
 
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data1:

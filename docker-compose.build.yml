@@ -10,6 +10,11 @@ services:
       - ./back:/app
     env_file:
       - .env
+    networks:
+      - app-network-prod
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   nginx:
     image: nginx
@@ -19,6 +24,8 @@ services:
       - ./front/dist:/usr/share/nginx/html
       - ./nginx.conf:/etc/nginx/nginx.conf
     restart: unless-stopped
+    networks:
+      - app-network-prod
 
   postgres:
     image: postgres:17
@@ -29,6 +36,8 @@ services:
     volumes:
       - postgres_data1:/var/lib/postgresql/data
       - ./DB/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network-prod
   
   postgres-usuarios:
     image: postgres:17
@@ -39,6 +48,8 @@ services:
     volumes:
       - postgres_data2:/var/lib/postgresql/data
       - ./DB-Usuarios/init.sh:/docker-entrypoint-initdb.d/init.sh
+    networks:
+      - app-network-prod
 
   adminer:
     image: adminer
@@ -47,6 +58,8 @@ services:
       - ${ADMINER_PORT}:${ADMINER_PORT}
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - app-network-prod
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -55,6 +68,12 @@ services:
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     env_file:
       - .env
+    networks:
+      - app-network-prod
+
+networks:
+  app-network-prod:
+    driver: bridge
 
 volumes:
   postgres_data1:
