@@ -5,18 +5,23 @@ import { useToast } from '../../Componentes/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../AuxS/Axiosinstance';
 
-import { formatearFecha } from '../../AuxS/Utilidades';
-import { FaRegCalendar, FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags, FaDatabase, FaRegStar } from 'react-icons/fa';
+import { FaCheckCircle, FaUser, FaStar, FaCode, FaEye, FaTags, FaDatabase, FaRegStar, FaInfoCircle } from 'react-icons/fa';
 
 import './PopUpDatos.css'
 
 
-const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => {
+const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios, onFiltrarPorDB }) => {
     const { mostrarToast } = useToast();
 
     const Navigate = useNavigate();
 
     const { IdEjercicioResolver, SetIdEjercicioResolver, SetterIdEjercicioResolver } = useContext(EstadoGlobalContexto)
+
+    // Función para resolver inmediatamente el ejercicio
+    const IrResolverEjercicioDirecto = (ejercicioId) => {
+        SetIdEjercicioResolver(ejercicioId || 'placeholder');
+        Navigate('/RealizarEjercicio');
+    }
 
     const IrResolverEjercicio = () => {
         if (IdEjercicioResolver == 'placeholder' || IdEjercicioResolver == '') {
@@ -25,17 +30,6 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
         }
         Navigate('/RealizarEjercicio')
     }
-
-    // Formatear fecha para mostrar
-    const formatFecha = (fechaStr) => {
-        if (!fechaStr) return 'Fecha desconocida';
-        try {
-            return formatearFecha(new Date(fechaStr));
-        } catch (error) {
-            return fechaStr;
-        }
-    };
-
 
     const [NombreEjercicio, SetNombreEjercicio] = useState('')
     const SetterNombreEjercicio = (event) => {
@@ -72,10 +66,11 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
         SetTopicosEjerccio(event.target.value)
     }
 
-    const ResolverEjercicio = (ej) => {
+    // Función para mostrar información del ejercicio en el modal
+    const MostrarInfoEjercicio = (ej) => {
         // Setea el ID del ejercicio a resolver
         SetIdEjercicioResolver(ej.id || 'placeholder');
-        console.log('Ejercicio a resolver:', ej.id || 'placeholder');
+        console.log('Ejercicio a mostrar info:', ej.id || 'placeholder');
         document.getElementById("Resolver-Ejercicios").showModal()
         SetNombreEjercicio(ej.nombre_ej || '')
         SetProblemaEjercicio(ej.problema || '')
@@ -84,7 +79,6 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
         SetPermiteIA(ej.permitiria || false)
         SetPermiteRespuesta(ej.permitirsolucion || false);
         SetTopicosEjerccio(ej.topicos || '')
-
     }
 
     // Manejar toggle de estrella
@@ -108,6 +102,24 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
         }
     };
 
+    // Función para filtrar por base de datos y autor
+    const handleFiltrarPorDB = (nombreDB, nombreAutor, event) => {
+        event.stopPropagation(); // Evitar otros eventos
+
+        // Guardar en localStorage para persistencia
+        localStorage.setItem('filtroDBActivo', JSON.stringify({
+            nombreDB: nombreDB,
+            nombreAutor: nombreAutor
+        }));
+
+        // Llamar al callback del padre para aplicar el filtro
+        if (onFiltrarPorDB) {
+            onFiltrarPorDB(nombreDB, nombreAutor);
+        }
+
+        mostrarToast(`🎯 Mostrando ejercicios de "${nombreDB}" por ${nombreAutor}`, 'info', 3000);
+    };
+
 
 
 
@@ -115,93 +127,102 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onActualizarEjercicios }) => 
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaEjercicios && ListaEjercicios.length > 0 ? ListaEjercicios.map((ej) => (
                 <div key={ej.id} className="card card-compact w-full md:w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[450px]">
-                    {/* Header con gradiente */}
-                    <div className="bg-neutral p-3 rounded-t-xl flex-shrink-0">
-                        <h2 className="card-title text-base-100 break-words">
-                            <span className="break-words max-w-full">{ej.nombre_ej || 'Sin nombre'}</span>
-                            <div className="badge badge-accent ml-2 flex-shrink-0">{{
+                    {/* Header con scroll vertical y max 3 líneas */}
+                    <div className="bg-neutral p-3 rounded-t-xl flex-shrink-0 max-h-[90px] min-h-[70px] overflow-y-auto overflow-x-hidden">
+                        <div className="flex items-start gap-2">
+                            <h2 className="card-title text-base-100 break-words break-all leading-snug flex-1">
+                                {ej.nombre_ej || 'Sin nombre'}
+                            </h2>
+                            <div className="badge badge-accent flex-shrink-0">{{
                                 1: 'Fácil',
                                 2: 'Intermedio',
                                 3: 'Difícil'
                             }[ej.dificultad] || 'Desconocido'}
                             </div>
-                        </h2>
+                        </div>
                     </div>
 
-                    {/* Contenido sin scroll general */}
-                    <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
-                        <div className="flex justify-between text-sm text-gray-500 mb-2 flex-shrink-0">
-                            <p><FaRegCalendar className="inline mr-1" /> {formatFecha(ej.fecha_creacion)}</p>
-                            <div className="flex items-center gap-3">
+                    {/* Contenido con scroll de arriba hacia abajo */}
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                        <div className="p-4 space-y-3">
+                            <div className="flex items-center justify-end gap-3 flex-shrink-0">
                                 {/* Indicador de completado */}
                                 {ej.completado && (
                                     <div className="flex items-center gap-1 text-success">
-                                        <FaCheckCircle className="text-success" />
+                                        <FaCheckCircle className="text-success flex-shrink-0" />
                                         <span className="font-semibold text-xs">Resuelto</span>
                                     </div>
                                 )}
                                 {/* Estrellas */}
                                 <div className="flex items-center gap-1">
-                                    <FaStar className="text-yellow-500" />
+                                    <FaStar className="text-yellow-500 flex-shrink-0" />
                                     <span className="font-semibold">{ej.estrellas || 0}</span>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Descripción con su propio scroll */}
-                        <div className="mb-3 flex-shrink-0">
-                            <p className="text-gray-700 mb-1"><b>Descripción:</b></p>
-                            <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
-                                <p className="break-words whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
-                            </div>
-                        </div>
-
-                        {/* Topicos con animación */}
-                        <div className="flex flex-wrap gap-2 mb-4 flex-shrink-0">
-                            {ej.topicos.map((topico, index) => (
-                                <div key={index}
-                                    className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200">
-                                    {topico}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Estadísticas con iconos */}
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            <div className="flex items-center">
-                                <FaCheckCircle className="text-success mr-2 flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-sm text-gray-500">Completados</p>
-                                    <p className="font-semibold">{ej.veces_completado || 0}</p>
+                            {/* Descripción */}
+                            <div className="flex-shrink-0">
+                                <p className="text-gray-700 mb-1"><b>Descripción:</b></p>
+                                <div className="max-h-20 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
+                                    <p className="break-words break-all whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center">
-                                <FaUser className="text-info mr-2 flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-sm text-gray-500">Autor</p>
-                                    <p className="font-semibold break-words">{ej.nombre_autor || 'Anónimo'}</p>
-                                </div>
+
+                            {/* Topicos */}
+                            <div className="flex flex-wrap gap-2 flex-shrink-0">
+                                {ej.topicos.map((topico, index) => (
+                                    <div key={index}
+                                        className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200 break-all">
+                                        {topico}
+                                    </div>
+                                ))}
                             </div>
-                            <div className="flex items-center">
-                                <FaDatabase className="text-warning mr-2 flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-sm text-gray-500">Base de datos</p>
-                                    <p className="font-semibold break-words">{ej.nombre_basedatos || 'N/A'}</p>
+
+                            {/* Estadísticas */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="flex items-center">
+                                    <FaUser className="text-info mr-2 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-sm text-gray-500">Autor</p>
+                                        <p className="font-semibold break-words break-all">{ej.nombre_autor || 'Anónimo'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center">
+                                    <FaDatabase className="text-warning mr-2 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm text-gray-500">Base de datos</p>
+                                        <button
+                                            className="font-semibold break-words break-all text-left hover:text-warning hover:underline transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 hover:scale-105 inline-flex items-center gap-1 group"
+                                            onClick={(e) => handleFiltrarPorDB(ej.nombre_basedatos, ej.nombre_autor, e)}
+                                            title="Click para filtrar ejercicios de esta base de datos y autor"
+                                        >
+                                            <span className="group-hover:font-bold transition-all">{ej.nombre_basedatos || 'N/A'}</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer con botones modernos */}
-                    <div className="card-actions p-4 border-t border-gray-200 flex-shrink-0">
+                    {/* Footer con botones modernos y responsive */}
+                    <div className="card-actions p-4 border-t border-gray-200 flex-shrink-0 flex flex-row gap-2">
                         <button
-                            className="btn btn-primary btn-wide flex items-center gap-2"
-                            onClick={() => ResolverEjercicio(ej)}
+                            className="btn btn-primary flex-[2] flex items-center justify-center gap-2"
+                            onClick={() => IrResolverEjercicioDirecto(ej.id)}
                         >
-                            <FaCode className="text-lg" /> Resolver
+                            <FaCode className="text-lg flex-shrink-0" /> Resolver
                         </button>
                         <button
-                            className={`btn btn-circle ml-auto ${ej.tiene_estrella ? 'btn-warning' : 'btn-outline btn-warning'}`}
+                            className="btn btn-outline btn-primary flex-[1] flex items-center justify-center gap-2"
+                            onClick={() => MostrarInfoEjercicio(ej)}
+                        >
+                            <FaInfoCircle className="text-lg flex-shrink-0" /> Info
+                        </button>
+                        <button
+                            className={`btn btn-circle ${ej.tiene_estrella ? 'btn-warning' : 'btn-outline btn-warning'} flex-shrink-0 self-center`}
                             onClick={(e) => handleToggleEstrella(ej.id, e)}
                             title={ej.tiene_estrella ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                         >

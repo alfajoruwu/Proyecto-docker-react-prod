@@ -50,9 +50,9 @@ const Principal = () => {
         SetBuscarAutor(event.target.value)
     }
 
-    const [OrdenarFecha, SetOrdenarFecha] = useState('')
-    const SetterOrdenarFecha = (event) => {
-        SetOrdenarFecha(event.target.value)
+    const [BuscarTopico, SetBuscarTopico] = useState('')
+    const SetterBuscarTopico = (event) => {
+        SetBuscarTopico(event.target.value)
     }
 
     const [OrdenarDificultad, SetOrdenarDificultad] = useState('')
@@ -64,6 +64,17 @@ const Principal = () => {
     const SetterFiltrarResueltos = (event) => {
         SetFiltrarResueltos(event.target.value)
     }
+
+    const [FiltrarFavoritos, SetFiltrarFavoritos] = useState('')
+    const SetterFiltrarFavoritos = (event) => {
+        SetFiltrarFavoritos(event.target.value)
+    }
+
+    // Filtro especial para DB + Autor (desde localStorage o desde click en carta)
+    const [FiltroDBAutor, SetFiltroDBAutor] = useState(() => {
+        const filtroGuardado = localStorage.getItem('filtroDBActivo');
+        return filtroGuardado ? JSON.parse(filtroGuardado) : null;
+    });
 
     // --------- Mostrar Elementos --------
 
@@ -84,6 +95,11 @@ const Principal = () => {
             ejercicio?.autor?.toLowerCase().includes(BuscarAutor.toLowerCase()) ||
             ejercicio?.nombre_autor?.toLowerCase().includes(BuscarAutor.toLowerCase()) || false;
 
+        // Filtrar por tópico
+        const matchesTopico = !BuscarTopico ||
+            (ejercicio?.topicos && Array.isArray(ejercicio.topicos) &&
+                ejercicio.topicos.some(topico => topico.toLowerCase().includes(BuscarTopico.toLowerCase())));
+
         // Filtrar por ejercicios resueltos
         let matchesResolved = true;
         if (FiltrarResueltos === 'resueltos') {
@@ -92,16 +108,21 @@ const Principal = () => {
             matchesResolved = ejercicio?.completado === false || ejercicio?.completado === undefined;
         }
 
-        return matchesName && matchesAuthor && matchesResolved;
-    }).sort((a, b) => {
-        // Ordenar por fecha
-        if (OrdenarFecha === 'reciente') {
-            return new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0);
-        }
-        if (OrdenarFecha === 'antiguo') {
-            return new Date(a.fecha_creacion || 0) - new Date(b.fecha_creacion || 0);
+        // Filtrar por favoritos (con estrella)
+        let matchesFavorito = true;
+        if (FiltrarFavoritos === 'favoritos') {
+            matchesFavorito = ejercicio?.tiene_estrella === true;
         }
 
+        // Filtrar por DB + Autor (filtro especial desde carta)
+        let matchesDBAutor = true;
+        if (FiltroDBAutor) {
+            matchesDBAutor = ejercicio?.nombre_basedatos === FiltroDBAutor.nombreDB &&
+                ejercicio?.nombre_autor === FiltroDBAutor.nombreAutor;
+        }
+
+        return matchesName && matchesAuthor && matchesTopico && matchesResolved && matchesFavorito && matchesDBAutor;
+    }).sort((a, b) => {
         // Ordenar por dificultad
         if (OrdenarDificultad === 'facil') {
             return (a.dificultad || 0) - (b.dificultad || 0);
@@ -155,6 +176,40 @@ const Principal = () => {
         cargarBasesDatos();
     }, []);
 
+    // Efecto para sincronizar el filtro desde localStorage al volver de resolver ejercicio
+    useEffect(() => {
+        const verificarFiltroStorage = () => {
+            const filtroGuardado = localStorage.getItem('filtroDBActivo');
+            if (filtroGuardado) {
+                const filtro = JSON.parse(filtroGuardado);
+                // Solo actualizar si es diferente al estado actual
+                if (JSON.stringify(filtro) !== JSON.stringify(FiltroDBAutor)) {
+                    SetFiltroDBAutor(filtro);
+                }
+            }
+        };
+
+        // Verificar al montar y cuando la ventana recibe foco (útil al volver de otra página)
+        verificarFiltroStorage();
+        window.addEventListener('focus', verificarFiltroStorage);
+
+        return () => {
+            window.removeEventListener('focus', verificarFiltroStorage);
+        };
+    }, []);
+
+    // Función para aplicar filtro de DB + Autor
+    const handleFiltrarPorDB = (nombreDB, nombreAutor) => {
+        SetFiltroDBAutor({ nombreDB, nombreAutor });
+    };
+
+    // Función para limpiar el filtro especial de DB + Autor
+    const limpiarFiltroDBAutor = () => {
+        SetFiltroDBAutor(null);
+        localStorage.removeItem('filtroDBActivo');
+        mostrarToast('✅ Filtro eliminado - Mostrando todos los ejercicios', 'success', 2000);
+    };
+
     const SetterCargandoEDITAR = (event) => {
         SetCargandoEDITAR(event.target.value)
     }
@@ -175,7 +230,28 @@ const Principal = () => {
 
             <div className='shadow-xl ContenidoA flex flex-col'>
 
-                <div className=' Filtros h-30  gap-3 p-3 flex flex-col'>
+                <div className=' Filtros  gap-3 p-3 flex flex-col'>
+
+                    {/* Filtro activo de DB + Autor */}
+                    {FiltroDBAutor && (
+                        <div className="border border-primary p-3 rounded-lg flex flex-row items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                <span className="text-sm font-medium truncate">
+                                    Filtrando: <strong>{FiltroDBAutor.nombreDB}</strong> / <strong>{FiltroDBAutor.nombreAutor}</strong>
+                                </span>
+                            </div>
+                            <button
+                                onClick={limpiarFiltroDBAutor}
+                                className="btn btn-primary btn-xs shrink-0"
+                                title="Quitar filtro"
+                            >
+                                Quitar ✕
+                            </button>
+                        </div>
+                    )}
 
                     <div className='flex flex-row gap-3'>
                         {/* Buscar por nombre */}
@@ -195,20 +271,18 @@ const Principal = () => {
                             value={BuscarAutor}
                             onChange={SetterBuscarAutor}
                         />
+
+                        {/* Buscar por tópico */}
+                        <input
+                            type="text"
+                            placeholder="Buscar por tópico..."
+                            className="flex-1 input input-md"
+                            value={BuscarTopico}
+                            onChange={SetterBuscarTopico}
+                        />
                     </div>
 
                     <div className='flex flex-row gap-3'>
-                        {/* Ordenar por fecha */}
-                        <select
-                            className="flex-1 select"
-                            value={OrdenarFecha}
-                            onChange={SetterOrdenarFecha}
-                        >
-                            <option value="" disabled>Ordenar por fecha</option>
-                            <option value="reciente">Más reciente</option>
-                            <option value="antiguo">Más antiguo</option>
-                        </select>
-
                         {/* Ordenar por dificultad */}
                         <select
                             className="flex-1 select"
@@ -226,10 +300,19 @@ const Principal = () => {
                             value={FiltrarResueltos}
                             onChange={SetterFiltrarResueltos}
                         >
-                            <option value="" disabled>Estado de resolución</option>
-                            <option value="">Todos</option>
+                            <option value="">Estado: Todos</option>
                             <option value="resueltos">Solo resueltos</option>
                             <option value="no_resueltos">No resueltos</option>
+                        </select>
+
+                        {/* Filtrar por favoritos */}
+                        <select
+                            className="flex-1 select"
+                            value={FiltrarFavoritos}
+                            onChange={SetterFiltrarFavoritos}
+                        >
+                            <option value="">Favoritos: Todos</option>
+                            <option value="favoritos">Solo favoritos</option>
                         </select>
 
                     </div>
@@ -247,6 +330,7 @@ const Principal = () => {
                             ListaEjercicios={filteredAndSortedEjercicios}
                             resolverEjercicio={InicarEjercicio}
                             onActualizarEjercicios={CargarEjercicios}
+                            onFiltrarPorDB={handleFiltrarPorDB}
                         />
                     )}
                 </div>

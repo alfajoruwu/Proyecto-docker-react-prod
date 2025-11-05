@@ -32,76 +32,71 @@ const MostrarCartasDB = ({ ListaBasesDatos, onEditarDB, onBorrarDB }) => {
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaBasesDatos && ListaBasesDatos.length > 0 ? ListaBasesDatos.map((db) => (
-                <div key={db.id} className="card card-compact w-full md:w-96 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[380px]">
-                    {/* Header con degradado y estadística */}
-                    <div className="bg-neutral p-4 rounded-t-xl flex-shrink-0">
-                        <div className="flex justify-between items-center">
-                            <h2 className="card-title text-base-100 break-words max-w-full">{db.nombre || 'Sin nombre'}</h2>
-                            {/* <div className="badge badge-accent ">
-                                <FaDatabase className="mr-1" /> {db.ejercicios_count || 0} ejercicios
-                            </div> */}
+                <div key={db.id} className="card card-compact w-full md:w-96 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[360px]">
+                    {/* Header con scroll vertical y max 3 líneas */}
+                    <div className="bg-neutral p-4 rounded-t-xl flex-shrink-0 max-h-[90px] min-h-[70px] overflow-y-auto overflow-x-hidden">
+                        <div className="flex justify-between items-start">
+                            <h2 className="card-title text-base-100 break-words break-all leading-snug max-w-full">{db.nombre || 'Sin nombre'}</h2>
                         </div>
                     </div>
 
-                    {/* Contenido principal */}
-                    <div className="card-body p-4 flex-1 min-h-0 flex flex-col">
-                        {/* Resumen con scroll */}
-                        <div className="mb-3 flex-shrink-0">
-                            <p className="text-gray-700 mb-1 font-semibold flex items-center gap-2">
-                                <FaRegFileAlt className="text-lg" />
-                                Resumen
-                            </p>
-                            <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
-                                <p className="break-words whitespace-pre-wrap text-sm text-gray-600">{db.resumen || 'Sin descripción'}</p>
+                    {/* Contenido con scroll de arriba hacia abajo */}
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                        <div className="p-4 space-y-3">
+                            {/* Resumen */}
+                            <div className="flex-shrink-0">
+                                <p className="text-gray-700 mb-1 font-semibold flex items-center gap-2">
+                                    <FaRegFileAlt className="text-lg flex-shrink-0" />
+                                    Resumen
+                                </p>
+                                <div className="max-h-20 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2">
+                                    <p className="break-words break-all whitespace-pre-wrap text-sm text-gray-600">{db.resumen || 'Sin descripción'}</p>
+                                </div>
+                            </div>
+
+                            {/* Información de fecha */}
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 flex-shrink-0">
+                                <FaRegCalendarCheck className="text-lg flex-shrink-0" />
+                                <div>
+                                    <p className="text-sm text-gray-500">Creación</p>
+                                    <p className="font-medium text-gray-500 break-all">{formatFecha(db.fecha_creacion)}</p>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Información de fecha */}
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 mb-4 flex-shrink-0">
-                            <FaRegCalendarCheck className="text-lg" />
-                            <div>
-                                <p className="text-sm text-gray-500">Creación</p>
-                                <p className="font-medium text-gray-500">{formatFecha(db.fecha_creacion)}</p>
-                            </div>
-                        </div>
+                    {/* Footer con acciones responsive */}
+                    <div className="p-4 border-t border-gray-200 flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                                className="btn btn-secondary btn-outline flex-1 btn-sm"
+                                onClick={() => onEditarDB(db.id)}
+                            >
+                                <FaEdit className="sm:mr-2 flex-shrink-0" /> <span className="hidden sm:inline">Editar</span>
+                            </button>
 
-                        {/* Acciones con diseño moderno */}
-                        <div className="card-actions flex flex-col md:flex-row gap-3 mt-auto flex-shrink-0">
-                            {/* Botón principal */}
+                            <button
+                                className="btn btn-error btn-outline flex-1 btn-sm"
+                                onClick={() => {
+                                    if (window.confirm(`¿Eliminar "${db.nombre}"?`)) {
+                                        onBorrarDB(db.id);
+                                    }
+                                }}
+                            >
+                                <FaTrashAlt className="sm:mr-2 flex-shrink-0" /> <span className="hidden sm:inline">Borrar</span>
+                            </button>
 
+                            <button
+                                className="btn btn-accent btn-outline flex-1 btn-sm"
+                                onClick={() => {
+                                    console.log(`Probar la base de datos: ${db.id}`);
+                                    SetProbarDBIDMENU(db.id);
+                                    IrProbarDB();
 
-                            {/* Botones secundarios */}
-                            <div className="flex flex-1 gap-3">
-                                <button
-                                    className="btn btn-secondary btn-outline flex-1"
-                                    onClick={() => onEditarDB(db.id)}
-                                >
-                                    <FaEdit className="mr-2" /> Editar
-                                </button>
-
-                                <button
-                                    className="btn btn-error btn-outline flex-1"
-                                    onClick={() => {
-                                        if (window.confirm(`¿Eliminar "${db.nombre}"?`)) {
-                                            onBorrarDB(db.id);
-                                        }
-                                    }}
-                                >
-                                    <FaTrashAlt className="mr-2" /> Borrar
-                                </button>
-
-                                <button
-                                    className="btn btn-accent btn-outline flex-1"
-                                    onClick={() => {
-                                        console.log(`Probar la base de datos: ${db.id}`);
-                                        SetProbarDBIDMENU(db.id);
-                                        IrProbarDB();
-
-                                    }}
-                                >
-                                    <FaEye className="mr-2" /> Probar
-                                </button>
-                            </div>
+                                }}
+                            >
+                                <FaEye className="sm:mr-2 flex-shrink-0" /> <span className="hidden sm:inline">Probar</span>
+                            </button>
                         </div>
                     </div>
                 </div>

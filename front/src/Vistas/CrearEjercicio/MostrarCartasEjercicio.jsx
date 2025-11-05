@@ -77,70 +77,72 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
     return (
         <div className='flex flex-row flex-wrap gap-3'>
             {ListaEjercicios && ListaEjercicios.length > 0 ? ListaEjercicios.map((ej) => (
-                <div key={ej.id} className="card card-compact w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-                    {/* Header con efecto de degradado */}
-                    <div className="bg-neutral p-4 rounded-t-xl">
-                        <h2 className="card-title text-base-100">
-                            {ej.nombre_ej || 'Sin nombre'}
-                            <div className="badge badge-accent ml-2">{{
+                <div key={ej.id} className="card card-compact w-full md:w-90 bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-[400px]">
+                    {/* Header con scroll vertical y max 3 líneas */}
+                    <div className="bg-neutral p-4 rounded-t-xl flex-shrink-0 max-h-[90px] min-h-[70px] overflow-y-auto overflow-x-hidden">
+                        <div className="flex items-start gap-2">
+                            <h2 className="card-title text-base-100 break-words break-all leading-snug flex-1">
+                                {ej.nombre_ej || 'Sin nombre'}
+                            </h2>
+                            <div className="badge badge-accent flex-shrink-0">{{
                                 1: 'Fácil',
                                 2: 'Intermedio',
                                 3: 'Difícil'
                             }[ej.dificultad] || 'Desconocido'}
                             </div>
-                        </h2>
+                        </div>
                     </div>
 
-                    {/* Contenido principal */}
-                    <div className="card-body flex-1 p-4 min-h-0 flex flex-col">
-                        {/* Información básica */}
-                        <div className="space-y-2 flex-shrink-0">
-                            <div className="mb-2">
+                    {/* Contenido con scroll de arriba hacia abajo */}
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                        <div className="p-4 space-y-3">
+                            {/* Información básica */}
+                            <div className="flex-shrink-0">
                                 <span className="text-gray-700 font-semibold">Resumen:</span>
-                                <div className="max-h-24 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2 mt-1">
-                                    <p className="break-words whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
+                                <div className="max-h-20 overflow-y-auto overflow-x-hidden bg-base-200 rounded p-2 mt-1">
+                                    <p className="break-words break-all whitespace-pre-wrap text-sm">{ej.descripcion || 'Sin descripción'}</p>
                                 </div>
                             </div>
-                            <p className="flex items-center gap-2 text-sm text-gray-500">
-                                <FaRegCalendarAlt />
+                            <p className="flex items-center gap-2 text-sm text-gray-500 flex-shrink-0 break-all">
+                                <FaRegCalendarAlt className="flex-shrink-0" />
                                 Creado el: {formatFecha(ej.fecha_creacion)}
                             </p>
-                        </div>
 
-                        {/* Topicos con diseño moderno */}
-                        <div className="space-y-2 flex-shrink-0">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <FaTags />
-                                Topicos
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {ej.topicos.map((topico, index) => (
-                                    <div key={index}
-                                        className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200">
-                                        {topico}
-                                    </div>
-                                ))}
+                            {/* Topicos con diseño moderno */}
+                            <div className="space-y-2 flex-shrink-0">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <FaTags className="flex-shrink-0" />
+                                    Topicos
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {ej.topicos.map((topico, index) => (
+                                        <div key={index}
+                                            className="badge badge-outline badge-primary hover:bg-primary hover:text-white transition-colors duration-200 break-all">
+                                            {topico}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Zona de acciones con diseño moderno */}
-                    <div className="card-actions p-4 border-t border-gray-200 flex flex-col md:flex-row gap-3">
+                    {/* Zona de acciones responsive */}
+                    <div className="p-4 border-t border-gray-200 flex flex-col gap-2 flex-shrink-0">
                         {/* Botón principal */}
                         <button
-                            className="btn btn-primary btn-wide flex-1 md:flex-none"
+                            className="btn btn-primary w-full"
                             onClick={() => VerDetalles(ej)}
                         >
-                            <FaEye className="mr-2" /> Ver detalles
+                            <FaEye className="mr-2 flex-shrink-0" /> Ver detalles
                         </button>
 
                         {/* Botones secundarios */}
-                        <div className="flex flex-1 gap-3">
+                        <div className="flex gap-2">
                             <button
                                 className="btn btn-secondary btn-outline flex-1"
                                 onClick={() => onEditarDB(ej.id)}
                             >
-                                <FaEdit className="mr-2" /> Editar
+                                <FaEdit className="sm:mr-2 flex-shrink-0" /> <span className="hidden sm:inline">Editar</span>
                             </button>
 
                             <button
@@ -151,7 +153,7 @@ const MostrarCartasEjercicio = ({ ListaEjercicios, onEditarDB, onBorrarDB }) => 
                                     }
                                 }}
                             >
-                                <FaTrashAlt className="mr-2" /> Borrar
+                                <FaTrashAlt className="sm:mr-2 flex-shrink-0" /> <span className="hidden sm:inline">Borrar</span>
                             </button>
                         </div>
                     </div>

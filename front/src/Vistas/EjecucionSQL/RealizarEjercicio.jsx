@@ -702,12 +702,12 @@ const RealizarEjercicio = ({ }) => {
 
                                         if (errores.length === 0) {
                                             return (
-                                                <div className="p-4 sm:p-6 bg-success bg-opacity-10 border-2 border-success rounded-lg">
+                                                <div className="p-4 sm:p-6 bg-neutral bg-opacity-10 border-2 border-neutral rounded-lg">
                                                     <div className="flex items-center gap-3">
-                                                        <FaCheckCircle className="text-2xl sm:text-3xl flex-shrink-0" />
+                                                        <FaCheckCircle className="text-2xl text-neutral-content sm:text-3xl flex-shrink-0" />
                                                         <div>
-                                                            <h4 className="font-bold text-base sm:text-lg">¡Excelente trabajo!</h4>
-                                                            <p className="text-xs sm:text-sm opacity-70">No se encontraron errores en tu consulta SQL.</p>
+                                                            <h4 className="font-bold text-neutral-content sm:text-lg">¡Excelente trabajo!</h4>
+                                                            <p className="text-xs text-neutral-content sm:text-sm text-neutral-content opacity-70">No se encontraron errores en tu consulta SQL.</p>
                                                         </div>
                                                     </div>
                                                 </div>
